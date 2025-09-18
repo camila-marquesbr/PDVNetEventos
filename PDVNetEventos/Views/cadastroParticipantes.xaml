@@ -1,0 +1,40 @@
+﻿<Window x:Class="PDVNetEventos.Views.cadastroParticipantes"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cadastro de Participante" Height="420" Width="480" WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Nome completo"/>
+            <TextBox Text="{Binding Nome, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="CPF" Margin="0,10,0,0"/>
+            <TextBox Text="{Binding CPF}"/>
+
+            <TextBlock Text="Telefone" Margin="0,10,0,0"/>
+            <TextBox Text="{Binding Telefone}"/>
+
+            <TextBlock Text="Tipo" Margin="0,10,0,0"/>
+            <ComboBox SelectedValue="{Binding Tipo}">
+                <ComboBoxItem Content="VIP"/>
+                <ComboBoxItem Content="Interno"/>
+                <ComboBoxItem Content="Externo"/>
+            </ComboBox>
+
+            <Separator Margin="0,12,0,12"/>
+
+            <TextBlock Text="Vincular ao Evento" FontWeight="Bold"/>
+            <ComboBox ItemsSource="{Binding Eventos}" DisplayMemberPath="Nome"
+                      SelectedValuePath="Id" SelectedValue="{Binding EventoId}" Width="250"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Salvar" Width="120" Height="34" Command="{Binding SalvarCommand}" Margin="0,0,10,0"/>
+            <Button Content="Vincular ao Evento" Width="160" Height="34" Command="{Binding VincularAoEventoCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>

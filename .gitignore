@@ -1,0 +1,21 @@
+# Build
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.dbmdl
+*.aps
+*.ncb
+*.opendb
+*.VC.db
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Logs
+*.log

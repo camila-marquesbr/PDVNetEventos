@@ -1,0 +1,34 @@
+﻿<Window x:Class="PDVNetEventos.Views.cadastroFornecedor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cadastro de Fornecedor" Height="420" Width="520"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="Serviço"/>
+            <TextBox Text="{Binding NomeServico, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="CNPJ" Margin="0,10,0,0"/>
+            <TextBox Text="{Binding CNPJ}"/>
+
+            <TextBlock Text="Preço Padrão (opcional)" Margin="0,10,0,0"/>
+            <TextBox Text="{Binding PrecoPadrao}"/>
+
+            <Separator Margin="0,12,0,12"/>
+
+            <TextBlock Text="Vincular ao Evento" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal">
+                <ComboBox ItemsSource="{Binding Eventos}" DisplayMemberPath="Nome"
+                          SelectedValuePath="Id" SelectedValue="{Binding EventoId}" Width="250" Margin="0,0,10,0"/>
+                <TextBox Width="120" Text="{Binding ValorAcordado}" ToolTip="Valor acordado com o evento"/>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Salvar" Width="120" Height="34" Command="{Binding SalvarCommand}" Margin="0,0,10,0"/>
+            <Button Content="Vincular ao Evento" Width="160" Height="34" Command="{Binding VincularAoEventoCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>
