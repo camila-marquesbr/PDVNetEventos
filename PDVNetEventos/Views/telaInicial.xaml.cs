@@ -14,9 +14,7 @@ using System.Windows.Shapes;
 
 namespace PDVNetEventos.ViewModels
 {
-    /// <summary>
-    /// Lógica interna para MainWindow.xaml
-    /// </summary>
+
     public partial class MainWindow : Window
     {
         public MainWindow()

@@ -23,7 +23,7 @@ namespace PDVNetEventos.ViewModels
         private DateTime _dataFim = DateTime.Today;
         private int _capacidade;
         private decimal _orcamento;
-        private int _tipoEventoId;                 // <--- FALTAVA
+        private int _tipoEventoId;                 
 
         // ---- binds
         public string? NomeEvento { get => _nomeEvento; set { _nomeEvento = value; OnPropertyChanged(nameof(NomeEvento)); } }
@@ -32,7 +32,7 @@ namespace PDVNetEventos.ViewModels
         public int Capacidade { get => _capacidade; set { _capacidade = value; OnPropertyChanged(nameof(Capacidade)); } }
         public decimal Orcamento { get => _orcamento; set { _orcamento = value; OnPropertyChanged(nameof(Orcamento)); } }
 
-        public int TipoEventoId    // <--- PROPRIEDADE QUE O XAML/FORM USA
+        public int TipoEventoId    
         {
             get => _tipoEventoId;
             set { _tipoEventoId = value; OnPropertyChanged(nameof(TipoEventoId)); }
@@ -40,7 +40,7 @@ namespace PDVNetEventos.ViewModels
 
         public ObservableCollection<TipoEvento> TiposEvento { get; } = new();
 
-        // ---- comando
+      
         public ICommand SalvarCommand { get; }
 
         public cadastroEventoViewModel()

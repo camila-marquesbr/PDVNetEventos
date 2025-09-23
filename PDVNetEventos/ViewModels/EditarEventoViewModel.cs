@@ -3,9 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.EntityFrameworkCore;
 using PDVNetEventos.Commands;
-using PDVNetEventos.Data;
 using PDVNetEventos.Data.Entities;
 using PDVNetEventos.Services;
 
@@ -13,73 +11,80 @@ namespace PDVNetEventos.ViewModels
 {
     public class EditarEventoViewModel : INotifyPropertyChanged
     {
-        public int Id { get; }
-        private string _nome = "";
-        public string Nome { get => _nome; set { _nome = value; OnPropertyChanged(nameof(Nome)); } }
+        private readonly int _id;
 
-        private DateTime _inicio = DateTime.Today, _fim = DateTime.Today;
-        public DateTime DataInicio { get => _inicio; set { _inicio = value; OnPropertyChanged(nameof(DataInicio)); } }
-        public DateTime DataFim { get => _fim; set { _fim = value; OnPropertyChanged(nameof(DataFim)); } }
-
-        private int _capacidade;
-        public int Capacidade { get => _capacidade; set { _capacidade = value; OnPropertyChanged(nameof(Capacidade)); } }
-
-        private decimal _orcamento;
-        public decimal OrcamentoMaximo { get => _orcamento; set { _orcamento = value; OnPropertyChanged(nameof(OrcamentoMaximo)); } }
+        public string NomeEvento { get; set; } = "";
+        public DateTime DataInicio { get; set; } = DateTime.Today;
+        public DateTime DataFim { get; set; } = DateTime.Today;
+        public int Capacidade { get; set; }
+        public decimal Orcamento { get; set; }
+        public int TipoEventoId { get; set; }
 
         public ICommand SalvarCommand { get; }
-        public ICommand CancelarCommand { get; }
 
         public EditarEventoViewModel(int id)
         {
-            Id = id;
+            _id = id;
             SalvarCommand = new RelayCommand(async _ => await SalvarAsync());
-            CancelarCommand = new RelayCommand(_ => Close());
             _ = CarregarAsync();
         }
 
         private async Task CarregarAsync()
         {
-            try
-            {
-                using var db = new AppDbContext();
-                var ev = await db.Eventos.AsNoTracking().FirstAsync(x => x.Id == Id);
-                Nome = ev.Nome;
-                DataInicio = ev.DataInicio;
-                DataFim = ev.DataFim;
-                Capacidade = ev.CapacidadeMaxima;
-                OrcamentoMaximo = ev.OrcamentoMaximo;
-            }
-            catch (Exception ex) { MessageBox.Show("Erro ao carregar: " + ex.Message); }
+            var svc = new EventService();
+            var e = await svc.ObterEventoAsync(_id);
+
+            NomeEvento = e.Nome;
+            DataInicio = e.DataInicio;
+            DataFim = e.DataFim;
+            Capacidade = e.CapacidadeMaxima;
+            Orcamento = e.OrcamentoMaximo;
+            TipoEventoId = e.TipoEventoId;
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
         }
 
         private async Task SalvarAsync()
         {
             try
             {
-                var ev = new Evento
+                if (string.IsNullOrWhiteSpace(NomeEvento))
                 {
-                    Id = Id,
-                    Nome = Nome,
+                    MessageBox.Show("Informe o nome do evento."); return;
+                }
+                if (DataInicio > DataFim)
+                {
+                    MessageBox.Show("Data início não pode ser após a data fim."); return;
+                }
+                if (Capacidade <= 0)
+                {
+                    MessageBox.Show("Capacidade deve ser > 0."); return;
+                }
+
+                var svc = new EventService();
+                await svc.AtualizarEventoAsync(new Evento
+                {
+                    Id = _id,
+                    Nome = NomeEvento,
                     DataInicio = DataInicio,
                     DataFim = DataFim,
                     CapacidadeMaxima = Capacidade,
-                    OrcamentoMaximo = OrcamentoMaximo
-                };
+                    OrcamentoMaximo = Orcamento,
+                    TipoEventoId = TipoEventoId
+                });
 
-                var svc = new EventService();
-                await svc.AtualizarEventoAsync(ev);
                 MessageBox.Show("Evento atualizado!");
-                Close();
+                Fechar();
             }
-            catch (Exception ex) { MessageBox.Show("Erro ao salvar: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro: " + ex.Message);
+            }
         }
 
-        private void Close() =>
-            Application.Current.Windows[Application.Current.Windows.Count - 1]?.Close();
+        private void Fechar()
+            => Application.Current.Windows[0]?.Close();
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string n) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }
 }

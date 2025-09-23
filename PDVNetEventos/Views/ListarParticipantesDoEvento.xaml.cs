@@ -17,10 +17,11 @@ namespace PDVNetEventos.Views
 {
     public partial class ListarParticipantesDoEvento : Window
     {
-        public ListarParticipantesDoEvento(int eventoId, string eventoNome)
+        public ListarParticipantesDoEvento(int eventoId, string nomeEvento)
         {
             InitializeComponent();
-            DataContext = new ListarParticipantesDoEventoViewModel(eventoId, eventoNome);
+            DataContext = new PDVNetEventos.ViewModels.ListarParticipantesDoEventoViewModel(eventoId, nomeEvento);
+            Title = $"Participantes do evento: {nomeEvento}";
         }
     }
 }

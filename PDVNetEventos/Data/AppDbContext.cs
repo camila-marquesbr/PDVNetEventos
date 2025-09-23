@@ -14,7 +14,7 @@ namespace PDVNetEventos.Data
 {
     public class AppDbContext : DbContext
     {
-        // Ajuste a conexão conforme sua instalação (use SQLEXPRESS se for o seu caso)
+
         private const string CONN =
             "Server=localhost;Database=PDVNetEventosDb;Trusted_Connection=True;TrustServerCertificate=True";
 

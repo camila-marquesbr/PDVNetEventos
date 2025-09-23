@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PDVNetEventos.ViewModels;
 
+
 namespace PDVNetEventos.Views
 {
     public partial class ListarParticipantes : Window
@@ -20,7 +21,7 @@ namespace PDVNetEventos.Views
         public ListarParticipantes(int eventoId, string nomeEvento)
         {
             InitializeComponent();
-            DataContext = new PDVNetEventos.ViewModels.ListarParticipantesViewModel(eventoId, nomeEvento);
+            DataContext = new PDVNetEventos.ViewModels.ListarParticipantesDoEventoViewModel(eventoId, nomeEvento);
             Title = $"Participantes do evento: {nomeEvento}";
         }
     }

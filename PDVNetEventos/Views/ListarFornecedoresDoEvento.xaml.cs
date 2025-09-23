@@ -13,19 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PDVNetEventos.ViewModels;
 
+
 namespace PDVNetEventos.Views
 {
     public partial class ListarFornecedoresDoEvento : Window
     {
-        public ListarFornecedoresDoEvento()
+        public ListarFornecedoresDoEvento(int eventoId, string nomeEvento)
         {
             InitializeComponent();
-        }
-
-        public ListarFornecedoresDoEvento(int eventoId, string eventoNome) : this()
-        {
-            DataContext = new PDVNetEventos.ViewModels.ListarFornecedoresDoEventoViewModel(eventoId, eventoNome);
-            Title = $"Fornecedores do evento: {eventoNome}";
+            DataContext = new PDVNetEventos.ViewModels.ListarFornecedoresDoEventoViewModel(eventoId, nomeEvento);
+            Title = $"Fornecedores do evento: {nomeEvento}";
         }
     }
 }

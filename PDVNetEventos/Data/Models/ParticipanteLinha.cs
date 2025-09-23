@@ -12,6 +12,6 @@ namespace PDVNetEventos.Models
         public int Id { get; set; }
         public string NomeCompleto { get; set; } = "";
         public string CPF { get; set; } = "";
-        public string Tipo { get; set; } = "";   // <- string
+        public string Tipo { get; set; } = "";   
     }
 }

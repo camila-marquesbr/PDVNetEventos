@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using PDVNetEventos.Commands;
 using PDVNetEventos.Data;
+using PDVNetEventos.ViewModels.Shared;
 
 namespace PDVNetEventos.ViewModels
 {
@@ -14,19 +15,18 @@ namespace PDVNetEventos.ViewModels
     {
         private readonly int _eventoId;
 
-        public string Titulo { get; }
-        public ObservableCollection<ParticipanteDoEventoLinha> Itens { get; } = new();
+        public ObservableCollection<ParticipanteLinha> Itens { get; } = new();
 
         public ICommand AtualizarCommand { get; }
-        public ICommand RemoverCommand { get; }
+        public ICommand RemoverVinculoCommand { get; }
 
-        public ListarParticipantesDoEventoViewModel(int eventoId, string nomeEvento)
+
+        public ListarParticipantesDoEventoViewModel(int eventoId, string? _nomeIgnorado = null)
         {
             _eventoId = eventoId;
-            Titulo = $"Participantes do evento: {nomeEvento}";
 
             AtualizarCommand = new RelayCommand(async _ => await CarregarAsync());
-            RemoverCommand = new RelayCommand(async p => await RemoverAsync((ParticipanteDoEventoLinha)p!));
+            RemoverVinculoCommand = new RelayCommand(async p => await RemoverVinculoAsync((ParticipanteLinha)p!));
 
             _ = CarregarAsync();
         }
@@ -35,50 +35,46 @@ namespace PDVNetEventos.ViewModels
         {
             using var db = new AppDbContext();
 
-            var lista = await db.EventosParticipantes
-                .AsNoTracking()
-                .Where(ep => ep.EventoId == _eventoId)
-                .Select(ep => new ParticipanteDoEventoLinha
+            var query =
+                from ep in db.EventosParticipantes.AsNoTracking()
+                where ep.EventoId == _eventoId
+                join p in db.Participantes.AsNoTracking() on ep.ParticipanteId equals p.Id
+                orderby p.NomeCompleto
+                select new ParticipanteLinha
                 {
-                    Id = ep.Participante.Id,
-                    Nome = ep.Participante.NomeCompleto,
-                    CPF = ep.Participante.CPF,
-                    Tipo = ep.Participante.Tipo.ToString()
-                })
-                .OrderBy(x => x.Nome)
-                .ToListAsync();
+                    Id = p.Id,
+                    NomeCompleto = p.NomeCompleto,
+                    CPF = p.CPF,
+                    Tipo = p.Tipo
+                };
+
+            var lista = await query.ToListAsync();
 
             Itens.Clear();
-            foreach (var p in lista) Itens.Add(p);
+            foreach (var i in lista)
+                Itens.Add(i);
         }
 
-        private async Task RemoverAsync(ParticipanteDoEventoLinha p)
+        private async Task RemoverVinculoAsync(ParticipanteLinha? p)
         {
-            if (MessageBox.Show($"Remover '{p.Nome}' deste evento?",
-                "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            if (p is null) return;
+
+            if (MessageBox.Show($"Remover '{p.NomeCompleto}' do evento?",
+                    "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
 
             using var db = new AppDbContext();
-
-            var link = await db.EventosParticipantes
+            var vinc = await db.EventosParticipantes
                 .FirstOrDefaultAsync(x => x.EventoId == _eventoId && x.ParticipanteId == p.Id);
 
-            if (link != null)
+            if (vinc != null)
             {
-                db.EventosParticipantes.Remove(link);
+                db.EventosParticipantes.Remove(vinc);
                 await db.SaveChangesAsync();
+                await CarregarAsync();
             }
-
-            await CarregarAsync();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-    }
-
-    public class ParticipanteDoEventoLinha
-    {
-        public int Id { get; set; }
-        public string Nome { get; set; } = "";
-        public string CPF { get; set; } = "";
-        public string Tipo { get; set; } = "";
     }
 }

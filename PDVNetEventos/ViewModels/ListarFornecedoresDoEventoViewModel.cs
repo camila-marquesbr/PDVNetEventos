@@ -7,6 +7,7 @@ using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using PDVNetEventos.Commands;
 using PDVNetEventos.Data;
+using PDVNetEventos.ViewModels.Shared;
 
 namespace PDVNetEventos.ViewModels
 {
@@ -14,71 +15,127 @@ namespace PDVNetEventos.ViewModels
     {
         private readonly int _eventoId;
 
-        public string Titulo { get; }
-        public ObservableCollection<FornecedorDoEventoLinha> Itens { get; } = new();
+        // Cabeçalho / estado
+        private string _eventoNome = "";
+        public string EventoNome
+        {
+            get => _eventoNome;
+            private set { _eventoNome = value; OnPropertyChanged(nameof(EventoNome)); }
+        }
+
+        private decimal _gasto;
+        public decimal Gasto
+        {
+            get => _gasto;
+            private set { _gasto = value; OnPropertyChanged(nameof(Gasto)); OnPropertyChanged(nameof(Saldo)); }
+        }
+
+        private decimal _orcamento;
+        public decimal Orcamento
+        {
+            get => _orcamento;
+            private set { _orcamento = value; OnPropertyChanged(nameof(Orcamento)); OnPropertyChanged(nameof(Saldo)); }
+        }
+
+        public decimal Saldo => Orcamento - Gasto;
+
+        private bool _carregando;
+        public bool Carregando
+        {
+            get => _carregando;
+            private set { _carregando = value; OnPropertyChanged(nameof(Carregando)); }
+        }
+
+        public ObservableCollection<FornecedorLinha> Itens { get; } = new();
 
         public ICommand AtualizarCommand { get; }
-        public ICommand RemoverCommand { get; }
+        public ICommand RemoverVinculoCommand { get; }
 
-        public ListarFornecedoresDoEventoViewModel(int eventoId, string nomeEvento)
+
+        public ListarFornecedoresDoEventoViewModel(int eventoId, string? nomeEvento = null)
         {
             _eventoId = eventoId;
-            Titulo = $"Fornecedores do evento: {nomeEvento}";
+            if (!string.IsNullOrWhiteSpace(nomeEvento))
+                EventoNome = nomeEvento;
 
             AtualizarCommand = new RelayCommand(async _ => await CarregarAsync());
-            RemoverCommand = new RelayCommand(async f => await RemoverAsync((FornecedorDoEventoLinha)f!));
+            RemoverVinculoCommand = new RelayCommand(async f => await RemoverVinculoAsync((FornecedorLinha)f!));
+
 
             _ = CarregarAsync();
         }
 
         private async Task CarregarAsync()
         {
-            using var db = new AppDbContext();
+            try
+            {
+                Carregando = true;
+                using var db = new AppDbContext();
 
-            var lista = await db.EventosFornecedores
-                .AsNoTracking()
-                .Where(ef => ef.EventoId == _eventoId)
-                .Select(ef => new FornecedorDoEventoLinha
+                var ev = await db.Eventos.AsNoTracking()
+                    .Where(e => e.Id == _eventoId)
+                    .Select(e => new { e.Nome, e.OrcamentoMaximo })
+                    .FirstOrDefaultAsync();
+
+                if (ev != null)
                 {
-                    Id = ef.Fornecedor.Id,
-                    NomeServico = ef.Fornecedor.NomeServico,
-                    CNPJ = ef.Fornecedor.CNPJ,
-                    ValorAcordado = ef.ValorAcordado
-                })
-                .OrderBy(x => x.NomeServico)
-                .ToListAsync();
+                    Orcamento = ev.OrcamentoMaximo;
+                    if (string.IsNullOrWhiteSpace(EventoNome))
+                        EventoNome = ev.Nome;
+                }
 
-            Itens.Clear();
-            foreach (var f in lista) Itens.Add(f);
+                var query =
+                    from ef in db.EventosFornecedores.AsNoTracking()
+                    where ef.EventoId == _eventoId
+                    join f in db.Fornecedores.AsNoTracking() on ef.FornecedorId equals f.Id
+                    orderby f.NomeServico
+                    select new FornecedorLinha
+                    {
+                        Id = f.Id,
+                        NomeServico = f.NomeServico,
+                        CNPJ = f.CNPJ,
+                        PrecoPadrao = f.PrecoPadrao,
+                        ValorAcordado = ef.ValorAcordado
+                    };
+
+                var lista = await query.ToListAsync();
+
+                Gasto = lista.Sum(x => x.ValorAcordado);
+
+                Itens.Clear();
+                foreach (var i in lista)
+                    Itens.Add(i);
+
+                Itens.Clear();
+                foreach (var i in lista) Itens.Add(i);
+            }
+            finally
+            {
+                Carregando = false;
+            }
         }
 
-        private async Task RemoverAsync(FornecedorDoEventoLinha f)
+        private async Task RemoverVinculoAsync(FornecedorLinha? f)
         {
-            if (MessageBox.Show($"Remover '{f.NomeServico}' deste evento?",
-                "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            if (f is null) return;
+
+            if (MessageBox.Show($"Remover fornecedor '{f.NomeServico}' do evento?",
+                    "Confirmação", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
 
             using var db = new AppDbContext();
-
-            var link = await db.EventosFornecedores
+            var vinc = await db.EventosFornecedores
                 .FirstOrDefaultAsync(x => x.EventoId == _eventoId && x.FornecedorId == f.Id);
 
-            if (link != null)
+            if (vinc != null)
             {
-                db.EventosFornecedores.Remove(link);
+                db.EventosFornecedores.Remove(vinc);
                 await db.SaveChangesAsync();
+                await CarregarAsync();
             }
-
-            await CarregarAsync();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-    }
-
-    public class FornecedorDoEventoLinha
-    {
-        public int Id { get; set; }
-        public string NomeServico { get; set; } = "";
-        public string CNPJ { get; set; } = "";
-        public decimal ValorAcordado { get; set; }
+        private void OnPropertyChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }
 }

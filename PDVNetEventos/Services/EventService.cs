@@ -9,9 +9,8 @@ namespace PDVNetEventos.Services
 {
     public class EventService
     {
-        // ======== Regras de negócio / vínculos ========
+        // ========= EVENTO =========
 
-        /// Valida conflito de agenda entre eventos.
         public async Task ValidarDatasEventoAsync(Evento novo)
         {
             using var db = new AppDbContext();
@@ -27,13 +26,41 @@ namespace PDVNetEventos.Services
                     "Conflito de agenda: já existe um evento que se sobrepõe a estas datas.");
         }
 
-        /// Vincula participante ao evento (capacidade + duplicidade).
+        public async Task<Evento> ObterEventoAsync(int id)
+        {
+            using var db = new AppDbContext();
+            return await db.Eventos.FirstOrDefaultAsync(e => e.Id == id)
+                   ?? throw new InvalidOperationException("Evento não encontrado.");
+        }
+
+        public async Task AtualizarEventoAsync(Evento e)
+        {
+            using var db = new AppDbContext();
+
+            // valida regra de sobreposição
+            await ValidarDatasEventoAsync(e);
+
+            var atual = await db.Eventos.FirstOrDefaultAsync(x => x.Id == e.Id)
+                        ?? throw new InvalidOperationException("Evento não encontrado.");
+
+            atual.Nome = e.Nome;
+            atual.DataInicio = e.DataInicio;
+            atual.DataFim = e.DataFim;
+            atual.CapacidadeMaxima = e.CapacidadeMaxima;
+            atual.OrcamentoMaximo = e.OrcamentoMaximo;
+            atual.TipoEventoId = e.TipoEventoId;
+
+            await db.SaveChangesAsync();
+        }
+
+        // ========= VÍNCULO Participante ↔ Evento =========
+
         public async Task AdicionarParticipanteAsync(int eventoId, int participanteId)
         {
             using var db = new AppDbContext();
 
             var ev = await db.Eventos.FirstOrDefaultAsync(x => x.Id == eventoId)
-                ?? throw new InvalidOperationException("Evento não encontrado.");
+                     ?? throw new InvalidOperationException("Evento não encontrado.");
 
             _ = await db.Participantes.FindAsync(participanteId)
                 ?? throw new InvalidOperationException("Participante não encontrado.");
@@ -56,13 +83,26 @@ namespace PDVNetEventos.Services
             await db.SaveChangesAsync();
         }
 
-        /// Vincula fornecedor ao evento (controle de orçamento + duplicidade).
+        public async Task RemoverParticipanteAsync(int eventoId, int participanteId)
+        {
+            using var db = new AppDbContext();
+
+            var vinc = await db.EventosParticipantes
+                .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.ParticipanteId == participanteId)
+                ?? throw new InvalidOperationException("Vínculo não encontrado.");
+
+            db.EventosParticipantes.Remove(vinc);
+            await db.SaveChangesAsync();
+        }
+
+        // ========= VÍNCULO Fornecedor ↔ Evento =========
+
         public async Task AdicionarFornecedorAsync(int eventoId, int fornecedorId, decimal valorAcordado)
         {
             using var db = new AppDbContext();
 
             var ev = await db.Eventos.FirstOrDefaultAsync(x => x.Id == eventoId)
-                ?? throw new InvalidOperationException("Evento não encontrado.");
+                     ?? throw new InvalidOperationException("Evento não encontrado.");
 
             _ = await db.Fornecedores.FindAsync(fornecedorId)
                 ?? throw new InvalidOperationException("Fornecedor não encontrado.");
@@ -73,7 +113,7 @@ namespace PDVNetEventos.Services
 
             if (usado + valorAcordado > ev.OrcamentoMaximo)
                 throw new InvalidOperationException(
-                    $"Orçamento excedido. Restante: {(ev.OrcamentoMaximo - usado):C}.");
+                    $"Orçamento excedido. Restante: {ev.OrcamentoMaximo - usado:C}.");
 
             bool jaTem = await db.EventosFornecedores
                 .AnyAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId);
@@ -90,44 +130,19 @@ namespace PDVNetEventos.Services
             await db.SaveChangesAsync();
         }
 
-        // ======== CRUD: Evento ========
-
-        public async Task<int> CriarEventoAsync(Evento ev)
-        {
-            await ValidarDatasEventoAsync(ev);
-            using var db = new AppDbContext();
-            db.Eventos.Add(ev);
-            await db.SaveChangesAsync();
-            return ev.Id;
-        }
-
-        public async Task AtualizarEventoAsync(Evento ev)
-        {
-            await ValidarDatasEventoAsync(ev);
-            using var db = new AppDbContext();
-            db.Eventos.Update(ev);
-            await db.SaveChangesAsync();
-        }
-
-        public async Task RemoverEventoAsync(int eventoId)
+        public async Task RemoverFornecedorAsync(int eventoId, int fornecedorId)
         {
             using var db = new AppDbContext();
 
-            var ev = await db.Eventos.FindAsync(eventoId)
-                ?? throw new InvalidOperationException("Evento não encontrado.");
+            var vinc = await db.EventosFornecedores
+                .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId)
+                ?? throw new InvalidOperationException("Vínculo não encontrado.");
 
-            var participantes = db.EventosParticipantes.Where(x => x.EventoId == eventoId);
-            var fornecedores = db.EventosFornecedores.Where(x => x.EventoId == eventoId);
-
-            db.EventosParticipantes.RemoveRange(participantes);
-            db.EventosFornecedores.RemoveRange(fornecedores);
-            db.Eventos.Remove(ev);
-
+            db.EventosFornecedores.Remove(vinc);
             await db.SaveChangesAsync();
         }
 
-        // ======== CRUD: Participante ========
-
+        // ========= CRUD Participante =========
         public async Task<int> CriarParticipanteAsync(string nome, string cpf, string? telefone, TipoParticipante tipo)
         {
             using var db = new AppDbContext();
@@ -143,32 +158,39 @@ namespace PDVNetEventos.Services
                 Telefone = telefone,
                 Tipo = tipo
             };
+
             db.Participantes.Add(p);
             await db.SaveChangesAsync();
             return p.Id;
         }
 
+        public async Task<Participante> ObterParticipanteAsync(int id)
+        {
+            using var db = new AppDbContext();
+            return await db.Participantes.FirstOrDefaultAsync(x => x.Id == id)
+                   ?? throw new InvalidOperationException("Participante não encontrado.");
+        }
+
         public async Task AtualizarParticipanteAsync(Participante p)
         {
             using var db = new AppDbContext();
-            db.Participantes.Update(p);
+
+            bool cpfEmUso = await db.Participantes
+                .AnyAsync(x => x.Id != p.Id && x.CPF == p.CPF);
+            if (cpfEmUso) throw new InvalidOperationException("Já existe participante com este CPF.");
+
+            var atual = await db.Participantes.FirstOrDefaultAsync(x => x.Id == p.Id)
+                ?? throw new InvalidOperationException("Participante não encontrado.");
+
+            atual.NomeCompleto = p.NomeCompleto;
+            atual.CPF = p.CPF;
+            atual.Telefone = p.Telefone;
+            atual.Tipo = p.Tipo;
+
             await db.SaveChangesAsync();
         }
 
-        public async Task RemoverParticipanteAsync(int participanteId)
-        {
-            using var db = new AppDbContext();
-            var joins = db.EventosParticipantes.Where(x => x.ParticipanteId == participanteId);
-            db.EventosParticipantes.RemoveRange(joins);
-
-            var p = await db.Participantes.FindAsync(participanteId);
-            if (p != null) db.Participantes.Remove(p);
-
-            await db.SaveChangesAsync();
-        }
-
-        // ======== CRUD: Fornecedor ========
-
+        // ========= CRUD Fornecedor =========
         public async Task<int> CriarFornecedorAsync(string nomeServico, string cnpj, decimal? precoPadrao)
         {
             using var db = new AppDbContext();
@@ -183,26 +205,33 @@ namespace PDVNetEventos.Services
                 CNPJ = cnpj,
                 PrecoPadrao = precoPadrao
             };
+
             db.Fornecedores.Add(f);
             await db.SaveChangesAsync();
             return f.Id;
         }
 
+        public async Task<Fornecedor> ObterFornecedorAsync(int id)
+        {
+            using var db = new AppDbContext();
+            return await db.Fornecedores.FirstOrDefaultAsync(x => x.Id == id)
+                   ?? throw new InvalidOperationException("Fornecedor não encontrado.");
+        }
+
         public async Task AtualizarFornecedorAsync(Fornecedor f)
         {
             using var db = new AppDbContext();
-            db.Fornecedores.Update(f);
-            await db.SaveChangesAsync();
-        }
 
-        public async Task RemoverFornecedorAsync(int fornecedorId)
-        {
-            using var db = new AppDbContext();
-            var joins = db.EventosFornecedores.Where(x => x.FornecedorId == fornecedorId);
-            db.EventosFornecedores.RemoveRange(joins);
+            bool cnpjEmUso = await db.Fornecedores
+                .AnyAsync(x => x.Id != f.Id && x.CNPJ == f.CNPJ);
+            if (cnpjEmUso) throw new InvalidOperationException("Já existe fornecedor com este CNPJ.");
 
-            var f = await db.Fornecedores.FindAsync(fornecedorId);
-            if (f != null) db.Fornecedores.Remove(f);
+            var atual = await db.Fornecedores.FirstOrDefaultAsync(x => x.Id == f.Id)
+                ?? throw new InvalidOperationException("Fornecedor não encontrado.");
+
+            atual.NomeServico = f.NomeServico;
+            atual.CNPJ = f.CNPJ;
+            atual.PrecoPadrao = f.PrecoPadrao;
 
             await db.SaveChangesAsync();
         }

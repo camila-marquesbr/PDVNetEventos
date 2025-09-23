@@ -3,76 +3,89 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
 using PDVNetEventos.Commands;
 using PDVNetEventos.Data;
-using PDVNetEventos.Models;          // <— usa a classe da pasta Models
+using PDVNetEventos.ViewModels.Shared;
 
 namespace PDVNetEventos.ViewModels
 {
     public class ListarParticipantesViewModel : INotifyPropertyChanged
     {
-        private readonly int _eventoId;
-
         public ObservableCollection<ParticipanteLinha> Itens { get; } = new();
 
-        private ICommand? _removerVinculoCommand;
-        public ICommand RemoverVinculoCommand =>
-            _removerVinculoCommand ??= new RelayCommand(async p => await RemoverVinculoAsync(p as ParticipanteLinha));
+        public ICommand AtualizarCommand { get; }
+        public ICommand EditarCommand { get; }
+        public ICommand ExcluirCommand { get; }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        // Segundo parâmetro só para casar com o construtor chamado pela View
-        public ListarParticipantesViewModel(int eventoId, string? _ignored = null)
+        public ListarParticipantesViewModel()
         {
-            _eventoId = eventoId;
+            AtualizarCommand = new RelayCommand(async _ => await CarregarAsync());
+            EditarCommand = new RelayCommand(p => Editar((ParticipanteLinha)p!));
+            ExcluirCommand = new RelayCommand(async p => await ExcluirAsync((ParticipanteLinha)p!));
             _ = CarregarAsync();
         }
 
         private async Task CarregarAsync()
         {
-            using var db = new AppDbContext();
-
-            var query =
-                from ep in db.EventosParticipantes.AsNoTracking()
-                where ep.EventoId == _eventoId
-                join p in db.Participantes.AsNoTracking()
-                    on ep.ParticipanteId equals p.Id
-                orderby p.NomeCompleto
-                select new ParticipanteLinha
-                {
-                    Id = p.Id,
-                    NomeCompleto = p.NomeCompleto,
-                    CPF = p.CPF,
-                    Tipo = p.Tipo.ToString()
-                };
-
-            var lista = await query.ToListAsync();
-
-            Itens.Clear();
-            foreach (var i in lista)
-                Itens.Add(i);
-        }
-
-        private async Task RemoverVinculoAsync(ParticipanteLinha? p)
-        {
-            if (p is null) return;
-
-            using var db = new AppDbContext();
-
-            var vinc = await db.EventosParticipantes
-                .FirstOrDefaultAsync(x => x.EventoId == _eventoId && x.ParticipanteId == p.Id);
-
-            if (vinc != null)
+            try
             {
-                db.EventosParticipantes.Remove(vinc);
-                await db.SaveChangesAsync();
-                Itens.Remove(p);
+                using var db = new AppDbContext();
+
+                var lista = await db.Participantes
+                    .AsNoTracking()
+                    .OrderBy(p => p.NomeCompleto)
+                    .Select(p => new ParticipanteLinha
+                    {
+                        Id = p.Id,
+                        NomeCompleto = p.NomeCompleto,
+                        CPF = p.CPF,
+                        Tipo = p.Tipo
+                    })
+                    .ToListAsync();
+
+                Itens.Clear();
+                foreach (var i in lista) Itens.Add(i);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao carregar: " + ex.Message);
             }
         }
 
-        private void OnPropertyChanged(string prop) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        private void Editar(ParticipanteLinha p)
+        {
+            new PDVNetEventos.Views.EditarParticipante(p.Id).ShowDialog();
+            _ = CarregarAsync();
+        }
+
+        private async Task ExcluirAsync(ParticipanteLinha p)
+        {
+            if (MessageBox.Show($"Excluir participante '{p.NomeCompleto}'?", "Confirmação",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+            try
+            {
+                using var db = new AppDbContext();
+
+
+                var v1 = db.EventosParticipantes.Where(x => x.ParticipanteId == p.Id);
+                db.RemoveRange(v1);
+
+                var ent = await db.Participantes.FindAsync(p.Id);
+                if (ent != null) db.Participantes.Remove(ent);
+
+                await db.SaveChangesAsync();
+                Itens.Remove(p);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao excluir: " + ex.Message);
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
