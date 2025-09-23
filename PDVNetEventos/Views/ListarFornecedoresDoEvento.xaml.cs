@@ -1,0 +1,31 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using PDVNetEventos.ViewModels;
+
+namespace PDVNetEventos.Views
+{
+    public partial class ListarFornecedoresDoEvento : Window
+    {
+        public ListarFornecedoresDoEvento()
+        {
+            InitializeComponent();
+        }
+
+        public ListarFornecedoresDoEvento(int eventoId, string eventoNome) : this()
+        {
+            DataContext = new PDVNetEventos.ViewModels.ListarFornecedoresDoEventoViewModel(eventoId, eventoNome);
+            Title = $"Fornecedores do evento: {eventoNome}";
+        }
+    }
+}

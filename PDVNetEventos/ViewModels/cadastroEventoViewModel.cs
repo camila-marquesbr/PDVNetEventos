@@ -84,7 +84,7 @@ namespace PDVNetEventos.ViewModels
                     TipoEventoId = TipoEventoId
                 };
 
-                await service.ValidateEventDatesAsync(evento);
+                await service.ValidarDatasEventoAsync(evento);
 
                 using var db = new AppDbContext();
                 db.Eventos.Add(evento);

@@ -57,7 +57,7 @@ namespace PDVNetEventos.ViewModels
             try
             {
                 var svc = new EventService();
-                int id = await svc.CreateSupplierAsync(NomeServico, CNPJ, PrecoPadrao);
+                int id = await svc.CriarFornecedorAsync(NomeServico, CNPJ, PrecoPadrao);
                 System.Windows.MessageBox.Show($"Fornecedor salvo! Id={id}");
             }
             catch (System.Exception ex)
@@ -75,7 +75,7 @@ namespace PDVNetEventos.ViewModels
                 if (f == null) { System.Windows.MessageBox.Show("Salve um fornecedor primeiro."); return; }
 
                 var svc = new EventService();
-                await svc.AddSupplierToEventAsync(EventoId, f.Id, ValorAcordado);
+                await svc.AdicionarFornecedorAsync(EventoId, f.Id, ValorAcordado);
 
                 System.Windows.MessageBox.Show($"Fornecedor '{f.NomeServico}' vinculado ao evento.");
             }

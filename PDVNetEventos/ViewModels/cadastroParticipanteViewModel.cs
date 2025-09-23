@@ -60,7 +60,7 @@ namespace PDVNetEventos.ViewModels
             try
             {
                 var svc = new EventService();
-                int id = await svc.CreateParticipantAsync(Nome, CPF, Telefone, Tipo);
+                int id = await svc.CriarParticipanteAsync(Nome, CPF, Telefone, Tipo);
                 System.Windows.MessageBox.Show($"Participante salvo! Id={id}");
             }
             catch (System.Exception ex)
@@ -78,7 +78,7 @@ namespace PDVNetEventos.ViewModels
                 if (p == null) { System.Windows.MessageBox.Show("Salve um participante primeiro."); return; }
 
                 var svc = new EventService();
-                await svc.AddParticipantToEventAsync(EventoId, p.Id);
+                await svc.AdicionarParticipanteAsync(EventoId, p.Id);
 
                 System.Windows.MessageBox.Show($"Participante '{p.NomeCompleto}' vinculado ao evento.");
             }
