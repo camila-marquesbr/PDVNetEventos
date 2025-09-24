@@ -13,6 +13,8 @@ namespace PDVNetEventos
         public MainWindow()
         {
             InitializeComponent();
+
+            // CEP segue para Evento apenas
             var http = new HttpClient { BaseAddress = new Uri("https://viacep.com.br/") };
             _cepService = new ViaCepService(http);
         }
@@ -24,12 +26,12 @@ namespace PDVNetEventos
 
         private void AbrirCadastroParticipante_Click(object sender, RoutedEventArgs e)
         {
-            new cadastroParticipantes().ShowDialog(); // sem CEP
+            new cadastroParticipantes().ShowDialog();
         }
 
         private void AbrirCadastroFornecedor_Click(object sender, RoutedEventArgs e)
         {
-            new cadastroFornecedor(_cepService).ShowDialog();
+            new cadastroFornecedor().ShowDialog(); 
         }
 
         private void AbrirListarEventos_Click(object sender, RoutedEventArgs e)

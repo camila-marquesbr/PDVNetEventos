@@ -15,7 +15,6 @@ namespace PDVNetEventos.ViewModels
 {
     public class cadastroFornecedorViewModel : INotifyPropertyChanged
     {
-        // ====== CAMPOS QUE VOCÊ JÁ TINHA ======
         private string _nomeServico = "";
         private string _cnpj = "";
         private decimal? _precoPadrao;
@@ -25,76 +24,23 @@ namespace PDVNetEventos.ViewModels
         private int _eventoId;
         private decimal _valorAcordado;
 
-        public int EventoId
-        {
-            get => _eventoId;
-            set { _eventoId = value; OnPropertyChanged(nameof(EventoId)); }
-        }
+        public int EventoId { get => _eventoId; set { _eventoId = value; OnPropertyChanged(nameof(EventoId)); } }
+        public decimal ValorAcordado { get => _valorAcordado; set { _valorAcordado = value; OnPropertyChanged(nameof(ValorAcordado)); } }
 
-        public decimal ValorAcordado
-        {
-            get => _valorAcordado;
-            set { _valorAcordado = value; OnPropertyChanged(nameof(ValorAcordado)); }
-        }
-
-        public string NomeServico
-        {
-            get => _nomeServico;
-            set { _nomeServico = value; OnPropertyChanged(nameof(NomeServico)); }
-        }
-
-        public string CNPJ
-        {
-            get => _cnpj;
-            set { _cnpj = value; OnPropertyChanged(nameof(CNPJ)); }
-        }
-
-        public decimal? PrecoPadrao
-        {
-            get => _precoPadrao;
-            set { _precoPadrao = value; OnPropertyChanged(nameof(PrecoPadrao)); }
-        }
+        public string NomeServico { get => _nomeServico; set { _nomeServico = value; OnPropertyChanged(nameof(NomeServico)); } }
+        public string CNPJ { get => _cnpj; set { _cnpj = value; OnPropertyChanged(nameof(CNPJ)); } }
+        public decimal? PrecoPadrao { get => _precoPadrao; set { _precoPadrao = value; OnPropertyChanged(nameof(PrecoPadrao)); } }
 
         public ICommand SalvarCommand { get; }
         public ICommand VincularAoEventoCommand { get; }
 
-        // ====== NOVO: BLOCO DE CEP (sub-ViewModel de endereço) ======
-        /// <summary>
-        /// Sub-VM responsável por CEP e campos de endereço (Cep, Logradouro, Bairro, Localidade, Uf, etc.)
-        /// </summary>
-        public EnderecoFormViewModel Endereco { get; }
-
-        // ====== CONSTRUTORES ======
-        /// <summary>
-        /// Construtor principal: recebe o serviço de CEP (MainWindow/cadastroFornecedor.xaml.cs passará isso)
-        /// </summary>
-        public cadastroFornecedorViewModel(ICepService cepService)
-        {
-            // CEP
-            Endereco = new EnderecoFormViewModel(cepService);
-
-            // SEU CÓDIGO (mantido)
-            SalvarCommand = new RelayCommand(_ => Salvar());
-            VincularAoEventoCommand = new RelayCommand(_ => VincularAoEvento());
-            _ = CarregarEventosAsync();
-        }
-
-        /// <summary>
-        /// Construtor sem parâmetro – só para compatibilidade/designer. 
-        /// Recomendo usar sempre o construtor com ICepService na aplicação.
-        /// </summary>
         public cadastroFornecedorViewModel()
         {
-            // Se alguém instanciar sem serviço, o Endereco ficará "inativo".
-            // Você pode trocar por um serviço fake se preferir.
-            Endereco = null!; // intencional: a janela real usa o construtor com ICepService
-
             SalvarCommand = new RelayCommand(_ => Salvar());
             VincularAoEventoCommand = new RelayCommand(_ => VincularAoEvento());
             _ = CarregarEventosAsync();
         }
 
-        // ====== MÉTODOS QUE VOCÊ JÁ TINHA ======
         private async Task CarregarEventosAsync()
         {
             using var db = new AppDbContext();
@@ -124,11 +70,7 @@ namespace PDVNetEventos.ViewModels
             {
                 using var db = new AppDbContext();
                 var f = await db.Fornecedores.OrderByDescending(x => x.Id).FirstOrDefaultAsync();
-                if (f == null)
-                {
-                    System.Windows.MessageBox.Show("Salve um fornecedor primeiro.");
-                    return;
-                }
+                if (f == null) { System.Windows.MessageBox.Show("Salve um fornecedor primeiro."); return; }
 
                 var svc = new EventService();
                 await svc.AdicionarFornecedorAsync(EventoId, f.Id, ValorAcordado);
@@ -141,9 +83,7 @@ namespace PDVNetEventos.ViewModels
             }
         }
 
-        // ====== INotifyPropertyChanged ======
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string n) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+        private void OnPropertyChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }
 }
