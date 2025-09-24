@@ -1,38 +1,43 @@
-﻿using Microsoft.EntityFrameworkCore;
-using PDVNetEventos.Commands;
-using PDVNetEventos.Data;
-using PDVNetEventos.Data.Entities;
-using System;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-
+using Microsoft.EntityFrameworkCore;
+using PDVNetEventos.Commands;
+using PDVNetEventos.Data;
+using PDVNetEventos.Data.Entities;
+using PDVNetEventos.Services;
+using PDVNetEventos.Services.Cep;
 
 namespace PDVNetEventos.ViewModels
 {
     public class cadastroEventoViewModel : INotifyPropertyChanged
     {
-        // ---- campos privados
+        // ===== NOVO: bloco de CEP =====
+        /// <summary>
+        /// Sub-VM responsável por CEP e campos de endereço (Cep, Logradouro, Bairro, Localidade, Uf, etc.)
+        /// </summary>
+        public EnderecoFormViewModel? Endereco { get; }
+
+        // ---- campos privados (SEUS)
         private string? _nomeEvento = string.Empty;
         private DateTime _dataInicio = DateTime.Today;
         private DateTime _dataFim = DateTime.Today;
         private int _capacidade;
         private decimal _orcamento;
-        private int _tipoEventoId;                 
+        private int _tipoEventoId;
 
-        // ---- binds
+        // ---- binds (SEUS)
         public string? NomeEvento { get => _nomeEvento; set { _nomeEvento = value; OnPropertyChanged(nameof(NomeEvento)); } }
         public DateTime DataInicio { get => _dataInicio; set { _dataInicio = value; OnPropertyChanged(nameof(DataInicio)); } }
         public DateTime DataFim { get => _dataFim; set { _dataFim = value; OnPropertyChanged(nameof(DataFim)); } }
         public int Capacidade { get => _capacidade; set { _capacidade = value; OnPropertyChanged(nameof(Capacidade)); } }
         public decimal Orcamento { get => _orcamento; set { _orcamento = value; OnPropertyChanged(nameof(Orcamento)); } }
 
-        public int TipoEventoId    
+        public int TipoEventoId
         {
             get => _tipoEventoId;
             set { _tipoEventoId = value; OnPropertyChanged(nameof(TipoEventoId)); }
@@ -40,14 +45,40 @@ namespace PDVNetEventos.ViewModels
 
         public ObservableCollection<TipoEvento> TiposEvento { get; } = new();
 
-      
         public ICommand SalvarCommand { get; }
 
+        // ===== CONSTRUTORES =====
+
+        /// <summary>
+        /// Construtor principal (runtime): receba o serviço de CEP e inicialize a sub-VM de endereço.
+        /// </summary>
+        public cadastroEventoViewModel(ICepService cepService)
+        {
+            if (cepService == null) throw new ArgumentNullException(nameof(cepService));
+            Endereco = new EnderecoFormViewModel(cepService);
+            SalvarCommand = new RelayCommand(_ => Salvar());
+            Init();
+        }
+
+        /// <summary>
+        /// Construtor sem parâmetro (Designer/preview). Evite usar em runtime.
+        /// </summary>
         public cadastroEventoViewModel()
         {
-            SalvarCommand = new RelayCommand(_ => Salvar());   // <--- aponta pra UM Salvar()
+            // Endereco permanece null no designer; os bindings do XAML devem tolerar isso.
+            SalvarCommand = new RelayCommand(_ => Salvar());
+            Init();
+        }
+
+        /// <summary>
+        /// Inicializações comuns aos construtores.
+        /// </summary>
+        private void Init()
+        {
             _ = CarregarTiposAsync();
         }
+
+        // ===== MÉTODOS (SEUS) =====
 
         private async Task CarregarTiposAsync()
         {
@@ -72,7 +103,7 @@ namespace PDVNetEventos.ViewModels
                 if (DataInicio > DataFim)
                 { System.Windows.MessageBox.Show("Data início não pode ser após a data fim."); return; }
 
-                var service = new PDVNetEventos.Services.EventService();
+                var service = new EventService();
 
                 var evento = new Evento
                 {
@@ -84,6 +115,7 @@ namespace PDVNetEventos.ViewModels
                     TipoEventoId = TipoEventoId
                 };
 
+                // validação de data já existente
                 await service.ValidarDatasEventoAsync(evento);
 
                 using var db = new AppDbContext();
@@ -98,6 +130,7 @@ namespace PDVNetEventos.ViewModels
             }
         }
 
+        // ===== INotifyPropertyChanged =====
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }

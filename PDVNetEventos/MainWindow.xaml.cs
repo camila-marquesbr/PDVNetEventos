@@ -1,40 +1,40 @@
-﻿using System.Text;
+﻿using System;
+using System.Net.Http;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using PDVNetEventos.Services.Cep;
 using PDVNetEventos.Views;
 
 namespace PDVNetEventos
 {
     public partial class MainWindow : Window
     {
-        public MainWindow() { InitializeComponent(); }
+        private readonly ICepService _cepService;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            var http = new HttpClient { BaseAddress = new Uri("https://viacep.com.br/") };
+            _cepService = new ViaCepService(http);
+        }
 
         private void AbrirCadastroEvento_Click(object sender, RoutedEventArgs e)
         {
-            new cadastroEvento().ShowDialog();
+            new cadastroEvento(_cepService).ShowDialog();
         }
-
 
         private void AbrirCadastroParticipante_Click(object sender, RoutedEventArgs e)
         {
-            new PDVNetEventos.Views.cadastroParticipantes().ShowDialog();
+            new cadastroParticipantes().ShowDialog(); // sem CEP
         }
 
         private void AbrirCadastroFornecedor_Click(object sender, RoutedEventArgs e)
         {
-            new PDVNetEventos.Views.cadastroFornecedor().ShowDialog();
+            new cadastroFornecedor(_cepService).ShowDialog();
         }
 
         private void AbrirListarEventos_Click(object sender, RoutedEventArgs e)
         {
-            new PDVNetEventos.Views.ListarEventos().ShowDialog();
+            new ListarEventos().ShowDialog();
         }
     }
 }

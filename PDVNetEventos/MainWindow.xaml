@@ -1,23 +1,34 @@
 ﻿<Window x:Class="PDVNetEventos.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PDVNetEventos" Height="220" Width="360"
+        Title="PDVNetEventos"
+        Height="220" Width="360"
         WindowStartupLocation="CenterScreen">
+
     <Grid>
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Button Content="Listar Eventos" Width="180" Height="40"
-                    Click="AbrirListarEventos_Click" Margin="0,10,0,0"/>
+
+            <Button Content="Listar Eventos"
+                    Width="180" Height="40"
+                    Click="AbrirListarEventos_Click"
+                    Margin="0,10,0,0"/>
             <Button Content="Cadastro de Evento"
                     Width="180" Height="40"
                     Click="AbrirCadastroEvento_Click"
-                    Margin="0,0,0,10"/>
+                    />
+            <Button
+
+        Width="180" Height="40" Content="Cadastro de Fornecedor" Click="AbrirCadastroFornecedor_Click"/>
+
             <Button Content="Cadastro de Participante"
                     Width="180" Height="40"
                     Click="AbrirCadastroParticipante_Click"
                     Margin="0,0,0,10"/>
+
             <Button Content="Cadastro de Fornecedor"
                     Width="180" Height="40"
                     Click="AbrirCadastroFornecedor_Click"/>
+
         </StackPanel>
     </Grid>
 </Window>
