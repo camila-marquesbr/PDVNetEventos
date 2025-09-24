@@ -16,13 +16,13 @@ namespace PDVNetEventos.ViewModels
 {
     public class cadastroEventoViewModel : INotifyPropertyChanged
     {
-        // ===== NOVO: bloco de CEP =====
+        // ===== CEP / Endereço =====
         /// <summary>
-        /// Sub-VM responsável por CEP e campos de endereço (Cep, Logradouro, Bairro, Localidade, Uf, etc.)
+        /// Sub-VM responsável por CEP e campos de endereço (Cep, Logradouro, Complemento, Bairro, Localidade, Uf, Status).
         /// </summary>
         public EnderecoFormViewModel? Endereco { get; }
 
-        // ---- campos privados (SEUS)
+        // ---- campos privados (seus)
         private string? _nomeEvento = string.Empty;
         private DateTime _dataInicio = DateTime.Today;
         private DateTime _dataFim = DateTime.Today;
@@ -30,7 +30,7 @@ namespace PDVNetEventos.ViewModels
         private decimal _orcamento;
         private int _tipoEventoId;
 
-        // ---- binds (SEUS)
+        // ---- binds (seus)
         public string? NomeEvento { get => _nomeEvento; set { _nomeEvento = value; OnPropertyChanged(nameof(NomeEvento)); } }
         public DateTime DataInicio { get => _dataInicio; set { _dataInicio = value; OnPropertyChanged(nameof(DataInicio)); } }
         public DateTime DataFim { get => _dataFim; set { _dataFim = value; OnPropertyChanged(nameof(DataFim)); } }
@@ -47,11 +47,7 @@ namespace PDVNetEventos.ViewModels
 
         public ICommand SalvarCommand { get; }
 
-        // ===== CONSTRUTORES =====
-
-        /// <summary>
-        /// Construtor principal (runtime): receba o serviço de CEP e inicialize a sub-VM de endereço.
-        /// </summary>
+        // ===== construtores =====
         public cadastroEventoViewModel(ICepService cepService)
         {
             if (cepService == null) throw new ArgumentNullException(nameof(cepService));
@@ -60,26 +56,19 @@ namespace PDVNetEventos.ViewModels
             Init();
         }
 
-        /// <summary>
-        /// Construtor sem parâmetro (Designer/preview). Evite usar em runtime.
-        /// </summary>
+        // construtor sem parâmetro (Designer/preview). Evite usar em runtime.
         public cadastroEventoViewModel()
         {
-            // Endereco permanece null no designer; os bindings do XAML devem tolerar isso.
             SalvarCommand = new RelayCommand(_ => Salvar());
             Init();
         }
 
-        /// <summary>
-        /// Inicializações comuns aos construtores.
-        /// </summary>
         private void Init()
         {
             _ = CarregarTiposAsync();
         }
 
-        // ===== MÉTODOS (SEUS) =====
-
+        // ===== métodos =====
         private async Task CarregarTiposAsync()
         {
             using var db = new AppDbContext();
@@ -112,10 +101,18 @@ namespace PDVNetEventos.ViewModels
                     DataFim = DataFim,
                     CapacidadeMaxima = Capacidade,
                     OrcamentoMaximo = Orcamento,
-                    TipoEventoId = TipoEventoId
+                    TipoEventoId = TipoEventoId,
+
+                    // ===== endereço do evento (via CEP) =====
+                    Cep = Endereco?.Cep,
+                    Logradouro = Endereco?.Logradouro,
+                    Complemento = Endereco?.Complemento,
+                    Bairro = Endereco?.Bairro,
+                    Localidade = Endereco?.Localidade,
+                    Uf = Endereco?.Uf
                 };
 
-                // validação de data já existente
+                // validação de datas já existente
                 await service.ValidarDatasEventoAsync(evento);
 
                 using var db = new AppDbContext();
@@ -132,6 +129,7 @@ namespace PDVNetEventos.ViewModels
 
         // ===== INotifyPropertyChanged =====
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+        private void OnPropertyChanged(string n) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
     }
 }
