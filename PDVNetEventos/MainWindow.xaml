@@ -12,22 +12,21 @@
                     Width="180" Height="40"
                     Click="AbrirListarEventos_Click"
                     Margin="0,10,0,0"/>
+
             <Button Content="Cadastro de Evento"
                     Width="180" Height="40"
                     Click="AbrirCadastroEvento_Click"
-                    />
-            <Button
-
-        Width="180" Height="40" Content="Cadastro de Fornecedor" Click="AbrirCadastroFornecedor_Click"/>
+                    Margin="0,10,0,0"/>
 
             <Button Content="Cadastro de Participante"
                     Width="180" Height="40"
                     Click="AbrirCadastroParticipante_Click"
-                    Margin="0,0,0,10"/>
+                    Margin="0,10,0,0"/>
 
             <Button Content="Cadastro de Fornecedor"
                     Width="180" Height="40"
-                    Click="AbrirCadastroFornecedor_Click"/>
+                    Click="AbrirCadastroFornecedor_Click"
+                    Margin="0,10,0,0"/>
 
         </StackPanel>
     </Grid>
