@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.EntityFrameworkCore;
@@ -16,21 +15,19 @@ namespace PDVNetEventos.ViewModels
 {
     public class cadastroEventoViewModel : INotifyPropertyChanged
     {
-        // ===== CEP / Endereço =====
-        /// <summary>
-        /// Sub-VM responsável por CEP e campos de endereço (Cep, Logradouro, Complemento, Bairro, Localidade, Uf, Status).
-        /// </summary>
+        // CEP/Endereço 
         public EnderecoFormViewModel? Endereco { get; }
 
-        // ---- campos privados (seus)
+        // campos privados
         private string? _nomeEvento = string.Empty;
         private DateTime _dataInicio = DateTime.Today;
         private DateTime _dataFim = DateTime.Today;
         private int _capacidade;
         private decimal _orcamento;
         private int _tipoEventoId;
+        private string? _observacoes = "";  
 
-        // ---- binds (seus)
+        // binds
         public string? NomeEvento { get => _nomeEvento; set { _nomeEvento = value; OnPropertyChanged(nameof(NomeEvento)); } }
         public DateTime DataInicio { get => _dataInicio; set { _dataInicio = value; OnPropertyChanged(nameof(DataInicio)); } }
         public DateTime DataFim { get => _dataFim; set { _dataFim = value; OnPropertyChanged(nameof(DataFim)); } }
@@ -43,32 +40,32 @@ namespace PDVNetEventos.ViewModels
             set { _tipoEventoId = value; OnPropertyChanged(nameof(TipoEventoId)); }
         }
 
+        
+        public string? Observacoes
+        {
+            get => _observacoes;
+            set { _observacoes = value; OnPropertyChanged(nameof(Observacoes)); }
+        }
+
         public ObservableCollection<TipoEvento> TiposEvento { get; } = new();
 
         public ICommand SalvarCommand { get; }
 
-        // ===== construtores =====
+        // construtores
         public cadastroEventoViewModel(ICepService cepService)
         {
-            if (cepService == null) throw new ArgumentNullException(nameof(cepService));
             Endereco = new EnderecoFormViewModel(cepService);
             SalvarCommand = new RelayCommand(_ => Salvar());
-            Init();
-        }
-
-        // construtor sem parâmetro (Designer/preview). Evite usar em runtime.
-        public cadastroEventoViewModel()
-        {
-            SalvarCommand = new RelayCommand(_ => Salvar());
-            Init();
-        }
-
-        private void Init()
-        {
             _ = CarregarTiposAsync();
         }
 
-        // ===== métodos =====
+        public cadastroEventoViewModel()
+        {
+            SalvarCommand = new RelayCommand(_ => Salvar());
+            _ = CarregarTiposAsync();
+        }
+
+        // métodos
         private async Task CarregarTiposAsync()
         {
             using var db = new AppDbContext();
@@ -78,7 +75,6 @@ namespace PDVNetEventos.ViewModels
             if (TiposEvento.Count > 0) TipoEventoId = TiposEvento[0].Id;
         }
 
-        // *** deixe APENAS ESTE método Salvar ***
         private async void Salvar()
         {
             try
@@ -92,6 +88,9 @@ namespace PDVNetEventos.ViewModels
                 if (DataInicio > DataFim)
                 { System.Windows.MessageBox.Show("Data início não pode ser após a data fim."); return; }
 
+                if (string.IsNullOrWhiteSpace(Observacoes))
+                { System.Windows.MessageBox.Show("Informe as observações do evento."); return; }
+
                 var service = new EventService();
 
                 var evento = new Evento
@@ -103,7 +102,10 @@ namespace PDVNetEventos.ViewModels
                     OrcamentoMaximo = Orcamento,
                     TipoEventoId = TipoEventoId,
 
-                    // ===== endereço do evento (via CEP) =====
+                    // Observações 
+                    Observacoes = Observacoes,
+
+                    // Endereço via CEP
                     Cep = Endereco?.Cep,
                     Logradouro = Endereco?.Logradouro,
                     Complemento = Endereco?.Complemento,
@@ -112,7 +114,7 @@ namespace PDVNetEventos.ViewModels
                     Uf = Endereco?.Uf
                 };
 
-                // validação de datas já existente
+                // validação de datas 
                 await service.ValidarDatasEventoAsync(evento);
 
                 using var db = new AppDbContext();
@@ -127,7 +129,6 @@ namespace PDVNetEventos.ViewModels
             }
         }
 
-        // ===== INotifyPropertyChanged =====
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string n) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
