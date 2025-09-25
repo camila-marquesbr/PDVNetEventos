@@ -144,6 +144,15 @@ dotnet run --project PDVNetEventos
 
 ## Estrutura do Projeto
 
+No projeto, foi aplicado o princípio **SRP (Single Responsibility Principle)**, garantindo que cada classe tivesse uma responsabilidade única.  
+
+- `EventService` centraliza regras de negócio de eventos.  
+- `ViaCepService` é responsável apenas pela integração com a API de CEP.  
+- `EnderecoFormViewModel` lida apenas com os campos e comandos de endereço.  
+- `cadastroEventoViewModel` e outros ViewModels cuidam exclusivamente da lógica de tela.  
+
+Esse desacoplamento facilita a manutenção, os testes e a evolução do sistema.
+
 - **Data/**
   - **Entities/**
     - Evento.cs
