@@ -142,27 +142,30 @@ dotnet run --project PDVNetEventos
 
   - Persistência do endereço no Evento (Cep, Logradouro, Complemento, Bairro, Localidade, Uf)
 
-Estrutura do Projeto
+## Estrutura do Projeto
+
 PDVNetEventos/
 ├─ Data/
-│  ├─ Entities/ (Evento, Participante, Fornecedor, TipoEvento, *joins*)
-│  ├─ Migrations/
-│  └─ AppDbContext.cs
+│ ├─ Entities/ (Evento, Participante, Fornecedor, TipoEvento, joins)
+│ ├─ Migrations/
+│ └─ AppDbContext.cs
 ├─ Services/
-│  ├─ EventService.cs
-│  ├─ RelatoriosService.cs
-│  └─ Cep/ (ICepService.cs, ViaCepService.cs)
+│ ├─ EventService.cs
+│ ├─ RelatoriosService.cs
+│ └─ Cep/
+│ ├─ ICepService.cs
+│ └─ ViaCepService.cs
 ├─ ViewModels/
-│  ├─ cadastroEventoViewModel.cs
-│  ├─ cadastroParticipanteViewModel.cs
-│  ├─ cadastroFornecedorViewModel.cs
-│  ├─ EnderecoFormViewModel.cs
-│  ├─ ListarEventosViewModel.cs
-│  └─ (VMs dos relatórios e Tipos de Evento)
+│ ├─ cadastroEventoViewModel.cs
+│ ├─ cadastroParticipanteViewModel.cs
+│ ├─ cadastroFornecedorViewModel.cs
+│ ├─ EnderecoFormViewModel.cs
+│ ├─ ListarEventosViewModel.cs
+│ └─ (VMs dos relatórios e Tipos de Evento)
 └─ Views/
-   ├─ MainWindow.xaml (+ .cs)
-   ├─ (XAMLs de cadastros, listagens e relatórios)
-   └─ (XAMLs CRUD de Tipo de Evento)
+├─ MainWindow.xaml (+ .cs)
+├─ (XAMLs de cadastros, listagens e relatórios)
+└─ (XAMLs CRUD de Tipo de Evento)
 
 # Dicas & Troubleshooting
 
