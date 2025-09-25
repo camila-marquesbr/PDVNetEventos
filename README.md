@@ -144,28 +144,31 @@ dotnet run --project PDVNetEventos
 
 ## Estrutura do Projeto
 
-PDVNetEventos/
-├─ Data/
-│ ├─ Entities/ (Evento, Participante, Fornecedor, TipoEvento, joins)
-│ ├─ Migrations/
-│ └─ AppDbContext.cs
-├─ Services/
-│ ├─ EventService.cs
-│ ├─ RelatoriosService.cs
-│ └─ Cep/
-│ ├─ ICepService.cs
-│ └─ ViaCepService.cs
-├─ ViewModels/
-│ ├─ cadastroEventoViewModel.cs
-│ ├─ cadastroParticipanteViewModel.cs
-│ ├─ cadastroFornecedorViewModel.cs
-│ ├─ EnderecoFormViewModel.cs
-│ ├─ ListarEventosViewModel.cs
-│ └─ (VMs dos relatórios e Tipos de Evento)
-└─ Views/
-├─ MainWindow.xaml (+ .cs)
-├─ (XAMLs de cadastros, listagens e relatórios)
-└─ (XAMLs CRUD de Tipo de Evento)
+- **Data/**
+  - **Entities/**
+    - Evento.cs
+    - Participante.cs
+    - Fornecedor.cs
+    - TipoEvento.cs
+    - (classes de associação)
+  - **Migrations/**
+  - AppDbContext.cs
+- **Services/**
+  - EventService.cs
+  - RelatoriosService.cs
+  - **Cep/**
+    - ICepService.cs
+    - ViaCepService.cs
+- **ViewModels/**
+  - cadastroEventoViewModel.cs
+  - cadastroParticipanteViewModel.cs
+  - cadastroFornecedorViewModel.cs
+  - EnderecoFormViewModel.cs
+  - ListarEventosViewModel.cs
+  - (VMs de relatórios e tipos de evento)
+- **Views/**
+  - MainWindow.xaml (+ .cs)
+  - (XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
 
 # Dicas & Troubleshooting
 
