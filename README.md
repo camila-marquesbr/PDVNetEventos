@@ -179,17 +179,7 @@ Esse desacoplamento facilita a manutenção, os testes e a evolução do sistema
   - MainWindow.xaml (+ .cs)
   - (XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
 
-# Dicas & Troubleshooting
 
-  - Namespace XAML do x: deve ser http://schemas.microsoft.com/winfx/2006/xaml.
-
-  - DbSet nomes: use EventosParticipantes e EventosFornecedores (plural), conforme AppDbContext.
-
-  - Erros CS0111/CS0121: métodos duplicados no EventService. Deixe uma versão por assinatura.
-
-  - Valores R$: use StringFormat=N2 em colunas/labels.
-
-  - CEP: trate CEP inválido/timeout com mensagem amigável (já previsto em EnderecoFormViewModel.Status).
 
 
 
