@@ -31,7 +31,7 @@ Aplicação **WPF + EF Core (SQL Server)** para gestão de **Eventos**, **Partic
   
 **(Opcional) Visual Studio 2022 com workload .NET Desktop**
 
-#Configuração do Banco (connection string)
+# Configuração do Banco (connection string)
 Edite a connection string no AppDbContext (ou no local onde você a definiu). Exemplos:
 
 **LocalDB:**
