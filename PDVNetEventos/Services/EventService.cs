@@ -9,17 +9,26 @@ namespace PDVNetEventos.Services
 {
     public class EventService
     {
+        private readonly Func<AppDbContext> _db;
+
+        // Construtor padrão (app WPF): usa SQL Server via OnConfiguring
+        public EventService() : this(() => new AppDbContext()) { }
+
+        // Construtor para testes/DI: você injeta a fábrica do contexto
+        public EventService(Func<AppDbContext> dbFactory)
+        {
+            _db = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
+        }
+
         // ========= EVENTO =========
 
         public async Task ValidarDatasEventoAsync(Evento novo)
         {
-            using var db = new AppDbContext();
-
+            using var db = _db();
             bool conflita = await db.Eventos
-                .AnyAsync(e =>
-                    e.Id != novo.Id &&
-                    novo.DataInicio <= e.DataFim &&
-                    novo.DataFim >= e.DataInicio);
+                .AnyAsync(e => e.Id != novo.Id &&
+                               novo.DataInicio <= e.DataFim &&
+                               novo.DataFim >= e.DataInicio);
 
             if (conflita)
                 throw new InvalidOperationException(
@@ -28,16 +37,14 @@ namespace PDVNetEventos.Services
 
         public async Task<Evento> ObterEventoAsync(int id)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
             return await db.Eventos.FirstOrDefaultAsync(e => e.Id == id)
                    ?? throw new InvalidOperationException("Evento não encontrado.");
         }
 
         public async Task AtualizarEventoAsync(Evento e)
         {
-            using var db = new AppDbContext();
-
-            // valida regra de sobreposição
+            using var db = _db();
             await ValidarDatasEventoAsync(e);
 
             var atual = await db.Eventos.FirstOrDefaultAsync(x => x.Id == e.Id)
@@ -56,7 +63,7 @@ namespace PDVNetEventos.Services
         // ========= VÍNCULO Participante ↔ Evento =========
         public async Task AdicionarParticipanteAsync(int eventoId, int participanteId)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
             var evento = await db.Eventos
                 .AsNoTracking()
@@ -69,13 +76,11 @@ namespace PDVNetEventos.Services
             if (!participanteExiste)
                 throw new InvalidOperationException("Participante não encontrado.");
 
-            // 1) Já vinculado?
             bool jaVinculado = await db.EventosParticipantes
                 .AnyAsync(ep => ep.EventoId == eventoId && ep.ParticipanteId == participanteId);
             if (jaVinculado)
                 throw new InvalidOperationException("Participante já está vinculado a este evento.");
 
-            // 2) Conflito de datas
             bool conflito = await db.EventosParticipantes
                 .Where(ep => ep.ParticipanteId == participanteId && ep.EventoId != eventoId)
                 .Select(ep => ep.Evento!)
@@ -83,12 +88,10 @@ namespace PDVNetEventos.Services
             if (conflito)
                 throw new InvalidOperationException("Participante já está em evento nas mesmas datas.");
 
-            // 3) Lotação máxima
             int qtdAtual = await db.EventosParticipantes.CountAsync(ep => ep.EventoId == eventoId);
             if (qtdAtual >= evento.CapacidadeMaxima)
                 throw new InvalidOperationException("Capacidade do evento atingida.");
 
-            // Se chegou até aqui, pode vincular
             db.EventosParticipantes.Add(new EventoParticipante
             {
                 EventoId = eventoId,
@@ -100,8 +103,7 @@ namespace PDVNetEventos.Services
 
         public async Task RemoverParticipanteAsync(int eventoId, int participanteId)
         {
-            using var db = new AppDbContext();
-
+            using var db = _db();
             var vinc = await db.EventosParticipantes
                 .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.ParticipanteId == participanteId)
                 ?? throw new InvalidOperationException("Vínculo não encontrado.");
@@ -112,8 +114,7 @@ namespace PDVNetEventos.Services
 
         public async Task RemoverFornecedorAsync(int eventoId, int fornecedorId)
         {
-            using var db = new AppDbContext();
-
+            using var db = _db();
             var vinc = await db.EventosFornecedores
                 .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId)
                 ?? throw new InvalidOperationException("Vínculo não encontrado.");
@@ -125,7 +126,7 @@ namespace PDVNetEventos.Services
         // ========= CRUD Participante =========
         public async Task<int> CriarParticipanteAsync(string nome, string cpf, string? telefone, TipoParticipante tipo)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
             bool cpfExiste = await db.Participantes.AnyAsync(x => x.CPF == cpf);
             if (cpfExiste)
@@ -146,17 +147,16 @@ namespace PDVNetEventos.Services
 
         public async Task<Participante> ObterParticipanteAsync(int id)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
             return await db.Participantes.FirstOrDefaultAsync(x => x.Id == id)
                    ?? throw new InvalidOperationException("Participante não encontrado.");
         }
 
         public async Task AtualizarParticipanteAsync(Participante p)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
-            bool cpfEmUso = await db.Participantes
-                .AnyAsync(x => x.Id != p.Id && x.CPF == p.CPF);
+            bool cpfEmUso = await db.Participantes.AnyAsync(x => x.Id != p.Id && x.CPF == p.CPF);
             if (cpfEmUso) throw new InvalidOperationException("Já existe participante com este CPF.");
 
             var atual = await db.Participantes.FirstOrDefaultAsync(x => x.Id == p.Id)
@@ -173,7 +173,7 @@ namespace PDVNetEventos.Services
         // ========= CRUD Fornecedor =========
         public async Task<int> CriarFornecedorAsync(string nomeServico, string cnpj, decimal? precoPadrao)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
             bool cnpjExiste = await db.Fornecedores.AnyAsync(x => x.CNPJ == cnpj);
             if (cnpjExiste)
@@ -193,17 +193,16 @@ namespace PDVNetEventos.Services
 
         public async Task<Fornecedor> ObterFornecedorAsync(int id)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
             return await db.Fornecedores.FirstOrDefaultAsync(x => x.Id == id)
                    ?? throw new InvalidOperationException("Fornecedor não encontrado.");
         }
 
         public async Task AtualizarFornecedorAsync(Fornecedor f)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
-            bool cnpjEmUso = await db.Fornecedores
-                .AnyAsync(x => x.Id != f.Id && x.CNPJ == f.CNPJ);
+            bool cnpjEmUso = await db.Fornecedores.AnyAsync(x => x.Id != f.Id && x.CNPJ == f.CNPJ);
             if (cnpjEmUso) throw new InvalidOperationException("Já existe fornecedor com este CNPJ.");
 
             var atual = await db.Fornecedores.FirstOrDefaultAsync(x => x.Id == f.Id)
@@ -215,29 +214,25 @@ namespace PDVNetEventos.Services
 
             await db.SaveChangesAsync();
         }
-        /// <summary>Total gasto com fornecedores no evento.</summary>
+
         public async Task<decimal> ObterTotalGastosEventoAsync(int eventoId)
         {
-            using var db = new AppDbContext();
-
-            var total = await db.EventosFornecedores      
+            using var db = _db();
+            var total = await db.EventosFornecedores
                 .Where(x => x.EventoId == eventoId)
                 .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
-
             return total;
         }
 
-        /// <summary>Saldo = orçamento do evento - total gasto.</summary>
         public async Task<decimal> ObterSaldoOrcamentoEventoAsync(int eventoId)
         {
-            using var db = new AppDbContext();
-
+            using var db = _db();
             var dados = await db.Eventos
                 .Where(e => e.Id == eventoId)
                 .Select(e => new
                 {
                     Orcamento = e.OrcamentoMaximo,
-                    Gasto = db.EventosFornecedores        
+                    Gasto = db.EventosFornecedores
                               .Where(v => v.EventoId == e.Id)
                               .Sum(v => (decimal?)v.ValorAcordado) ?? 0m
                 })
@@ -245,14 +240,10 @@ namespace PDVNetEventos.Services
 
             return dados == null ? 0m : dados.Orcamento - dados.Gasto;
         }
-        /// <summary>
-        /// Vincula um fornecedor ao evento com um valor acordado.
-        /// Bloqueia se totalAtual + valorAcordado ultrapassar o orçamento do evento
-        /// e bloqueia duplicidade do mesmo fornecedor no mesmo evento.
-        /// </summary>
+
         public async Task AdicionarFornecedorAsync(int eventoId, int fornecedorId, decimal valorAcordado)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
             if (valorAcordado <= 0)
                 throw new InvalidOperationException("O valor acordado deve ser maior que zero.");
@@ -260,18 +251,15 @@ namespace PDVNetEventos.Services
             var evento = await db.Eventos.FindAsync(eventoId)
                          ?? throw new InvalidOperationException("Evento não encontrado.");
 
-            // evita duplicidade
             bool jaVinculado = await db.EventosFornecedores
                 .AnyAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId);
             if (jaVinculado)
                 throw new InvalidOperationException("Este fornecedor já está vinculado a este evento.");
 
-            // gasto atual
             decimal gastoAtual = await db.EventosFornecedores
                 .Where(x => x.EventoId == eventoId)
                 .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
 
-            // valida orçamento
             if (gastoAtual + valorAcordado > evento.OrcamentoMaximo)
             {
                 var excedente = gastoAtual + valorAcordado - evento.OrcamentoMaximo;
@@ -281,24 +269,19 @@ namespace PDVNetEventos.Services
                     $"Excederia em R$ {excedente:N2}.");
             }
 
-            var vinculo = new EventoFornecedor
+            db.EventosFornecedores.Add(new EventoFornecedor
             {
                 EventoId = eventoId,
                 FornecedorId = fornecedorId,
                 ValorAcordado = valorAcordado
-            };
+            });
 
-            db.EventosFornecedores.Add(vinculo);
             await db.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Atualiza o valor acordado de um fornecedor já vinculado ao evento.
-        /// Aplica a mesma regra de orçamento (considerando os outros vínculos).
-        /// </summary>
         public async Task AtualizarValorFornecedorAsync(int eventoId, int fornecedorId, decimal novoValor)
         {
-            using var db = new AppDbContext();
+            using var db = _db();
 
             if (novoValor <= 0)
                 throw new InvalidOperationException("O valor acordado deve ser maior que zero.");
@@ -310,7 +293,6 @@ namespace PDVNetEventos.Services
                 .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId)
                 ?? throw new InvalidOperationException("Vínculo não encontrado.");
 
-            // gasto dos OUTROS fornecedores (sem considerar este vínculo)
             decimal gastoOutros = await db.EventosFornecedores
                 .Where(x => x.EventoId == eventoId && x.FornecedorId != fornecedorId)
                 .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
@@ -327,9 +309,5 @@ namespace PDVNetEventos.Services
             vinculo.ValorAcordado = novoValor;
             await db.SaveChangesAsync();
         }
-
     }
 }
-
-
-
