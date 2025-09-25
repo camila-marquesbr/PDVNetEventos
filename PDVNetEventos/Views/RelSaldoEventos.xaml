@@ -1,0 +1,17 @@
+﻿<Window x:Class="PDVNetEventos.Views.RelSaldoEventos"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Saldo de Orçamento dos Eventos" Height="420" Width="680"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="12">
+        <Button DockPanel.Dock="Top" Content="Recarregar" Width="100" Command="{Binding RecarregarCommand}" Margin="0,0,0,8"/>
+        <DataGrid ItemsSource="{Binding Itens}" AutoGenerateColumns="False" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Evento" Binding="{Binding Evento}" Width="*"/>
+                <DataGridTextColumn Header="Orçamento (R$)" Binding="{Binding Orcamento, StringFormat=N2}" Width="140"/>
+                <DataGridTextColumn Header="Gasto (R$)" Binding="{Binding Gasto, StringFormat=N2}" Width="140"/>
+                <DataGridTextColumn Header="Saldo (R$)" Binding="{Binding Saldo, StringFormat=N2}" Width="140"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

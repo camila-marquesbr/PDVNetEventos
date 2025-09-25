@@ -54,26 +54,41 @@ namespace PDVNetEventos.Services
         }
 
         // ========= VÍNCULO Participante ↔ Evento =========
-
         public async Task AdicionarParticipanteAsync(int eventoId, int participanteId)
         {
             using var db = new AppDbContext();
 
-            var ev = await db.Eventos.FirstOrDefaultAsync(x => x.Id == eventoId)
-                     ?? throw new InvalidOperationException("Evento não encontrado.");
+            var evento = await db.Eventos
+                .AsNoTracking()
+                .Where(e => e.Id == eventoId)
+                .Select(e => new { e.Id, e.DataInicio, e.DataFim, e.CapacidadeMaxima })
+                .FirstOrDefaultAsync()
+                ?? throw new InvalidOperationException("Evento não encontrado.");
 
-            _ = await db.Participantes.FindAsync(participanteId)
-                ?? throw new InvalidOperationException("Participante não encontrado.");
+            bool participanteExiste = await db.Participantes.AnyAsync(p => p.Id == participanteId);
+            if (!participanteExiste)
+                throw new InvalidOperationException("Participante não encontrado.");
 
-            int inscritos = await db.EventosParticipantes.CountAsync(x => x.EventoId == eventoId);
-            if (inscritos >= ev.CapacidadeMaxima)
+            // 1) Já vinculado?
+            bool jaVinculado = await db.EventosParticipantes
+                .AnyAsync(ep => ep.EventoId == eventoId && ep.ParticipanteId == participanteId);
+            if (jaVinculado)
+                throw new InvalidOperationException("Participante já está vinculado a este evento.");
+
+            // 2) Conflito de datas
+            bool conflito = await db.EventosParticipantes
+                .Where(ep => ep.ParticipanteId == participanteId && ep.EventoId != eventoId)
+                .Select(ep => ep.Evento!)
+                .AnyAsync(e => !(e.DataFim < evento.DataInicio || e.DataInicio > evento.DataFim));
+            if (conflito)
+                throw new InvalidOperationException("Participante já está em evento nas mesmas datas.");
+
+            // 3) Lotação máxima
+            int qtdAtual = await db.EventosParticipantes.CountAsync(ep => ep.EventoId == eventoId);
+            if (qtdAtual >= evento.CapacidadeMaxima)
                 throw new InvalidOperationException("Capacidade do evento atingida.");
 
-            bool jaInscrito = await db.EventosParticipantes
-                .AnyAsync(x => x.EventoId == eventoId && x.ParticipanteId == participanteId);
-            if (jaInscrito)
-                throw new InvalidOperationException("Participante já inscrito neste evento.");
-
+            // Se chegou até aqui, pode vincular
             db.EventosParticipantes.Add(new EventoParticipante
             {
                 EventoId = eventoId,
@@ -92,41 +107,6 @@ namespace PDVNetEventos.Services
                 ?? throw new InvalidOperationException("Vínculo não encontrado.");
 
             db.EventosParticipantes.Remove(vinc);
-            await db.SaveChangesAsync();
-        }
-
-        // ========= VÍNCULO Fornecedor ↔ Evento =========
-
-        public async Task AdicionarFornecedorAsync(int eventoId, int fornecedorId, decimal valorAcordado)
-        {
-            using var db = new AppDbContext();
-
-            var ev = await db.Eventos.FirstOrDefaultAsync(x => x.Id == eventoId)
-                     ?? throw new InvalidOperationException("Evento não encontrado.");
-
-            _ = await db.Fornecedores.FindAsync(fornecedorId)
-                ?? throw new InvalidOperationException("Fornecedor não encontrado.");
-
-            decimal usado = await db.EventosFornecedores
-                .Where(x => x.EventoId == eventoId)
-                .SumAsync(x => (decimal?)x.ValorAcordado ?? 0m);
-
-            if (usado + valorAcordado > ev.OrcamentoMaximo)
-                throw new InvalidOperationException(
-                    $"Orçamento excedido. Restante: {ev.OrcamentoMaximo - usado:C}.");
-
-            bool jaTem = await db.EventosFornecedores
-                .AnyAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId);
-            if (jaTem)
-                throw new InvalidOperationException("Fornecedor já está vinculado a este evento.");
-
-            db.EventosFornecedores.Add(new EventoFornecedor
-            {
-                EventoId = eventoId,
-                FornecedorId = fornecedorId,
-                ValorAcordado = valorAcordado
-            });
-
             await db.SaveChangesAsync();
         }
 
@@ -265,6 +245,91 @@ namespace PDVNetEventos.Services
 
             return dados == null ? 0m : dados.Orcamento - dados.Gasto;
         }
+        /// <summary>
+        /// Vincula um fornecedor ao evento com um valor acordado.
+        /// Bloqueia se totalAtual + valorAcordado ultrapassar o orçamento do evento
+        /// e bloqueia duplicidade do mesmo fornecedor no mesmo evento.
+        /// </summary>
+        public async Task AdicionarFornecedorAsync(int eventoId, int fornecedorId, decimal valorAcordado)
+        {
+            using var db = new AppDbContext();
+
+            if (valorAcordado <= 0)
+                throw new InvalidOperationException("O valor acordado deve ser maior que zero.");
+
+            var evento = await db.Eventos.FindAsync(eventoId)
+                         ?? throw new InvalidOperationException("Evento não encontrado.");
+
+            // evita duplicidade
+            bool jaVinculado = await db.EventosFornecedores
+                .AnyAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId);
+            if (jaVinculado)
+                throw new InvalidOperationException("Este fornecedor já está vinculado a este evento.");
+
+            // gasto atual
+            decimal gastoAtual = await db.EventosFornecedores
+                .Where(x => x.EventoId == eventoId)
+                .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
+
+            // valida orçamento
+            if (gastoAtual + valorAcordado > evento.OrcamentoMaximo)
+            {
+                var excedente = gastoAtual + valorAcordado - evento.OrcamentoMaximo;
+                throw new InvalidOperationException(
+                    $"Orçamento excedido. Orçamento: R$ {evento.OrcamentoMaximo:N2}, " +
+                    $"Gasto atual: R$ {gastoAtual:N2}, Novo valor: R$ {valorAcordado:N2}. " +
+                    $"Excederia em R$ {excedente:N2}.");
+            }
+
+            var vinculo = new EventoFornecedor
+            {
+                EventoId = eventoId,
+                FornecedorId = fornecedorId,
+                ValorAcordado = valorAcordado
+            };
+
+            db.EventosFornecedores.Add(vinculo);
+            await db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Atualiza o valor acordado de um fornecedor já vinculado ao evento.
+        /// Aplica a mesma regra de orçamento (considerando os outros vínculos).
+        /// </summary>
+        public async Task AtualizarValorFornecedorAsync(int eventoId, int fornecedorId, decimal novoValor)
+        {
+            using var db = new AppDbContext();
+
+            if (novoValor <= 0)
+                throw new InvalidOperationException("O valor acordado deve ser maior que zero.");
+
+            var evento = await db.Eventos.FindAsync(eventoId)
+                         ?? throw new InvalidOperationException("Evento não encontrado.");
+
+            var vinculo = await db.EventosFornecedores
+                .FirstOrDefaultAsync(x => x.EventoId == eventoId && x.FornecedorId == fornecedorId)
+                ?? throw new InvalidOperationException("Vínculo não encontrado.");
+
+            // gasto dos OUTROS fornecedores (sem considerar este vínculo)
+            decimal gastoOutros = await db.EventosFornecedores
+                .Where(x => x.EventoId == eventoId && x.FornecedorId != fornecedorId)
+                .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
+
+            if (gastoOutros + novoValor > evento.OrcamentoMaximo)
+            {
+                var excedente = (gastoOutros + novoValor) - evento.OrcamentoMaximo;
+                throw new InvalidOperationException(
+                    $"Orçamento excedido. Orçamento: R$ {evento.OrcamentoMaximo:N2}, " +
+                    $"Gasto (outros): R$ {gastoOutros:N2}, Novo valor: R$ {novoValor:N2}. " +
+                    $"Excederia em R$ {excedente:N2}.");
+            }
+
+            vinculo.ValorAcordado = novoValor;
+            await db.SaveChangesAsync();
+        }
+
     }
 }
+
+
 

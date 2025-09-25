@@ -38,5 +38,16 @@ namespace PDVNetEventos
         {
             new ListarEventos().ShowDialog();
         }
+        private void AbrirRelAgenda_Click(object sender, RoutedEventArgs e)
+    => new PDVNetEventos.Views.RelAgendaParticipante().ShowDialog();
+
+        private void AbrirRelTopFornecedores_Click(object sender, RoutedEventArgs e)
+            => new PDVNetEventos.Views.RelTopFornecedores().ShowDialog();
+
+        private void AbrirRelTiposParticipante_Click(object sender, RoutedEventArgs e)
+            => new PDVNetEventos.Views.RelTiposParticipante().ShowDialog();
+
+        private void AbrirRelSaldoEventos_Click(object sender, RoutedEventArgs e)
+            => new PDVNetEventos.Views.RelSaldoEventos().ShowDialog();
     }
 }
