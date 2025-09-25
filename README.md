@@ -179,6 +179,39 @@ Esse desacoplamento facilita a manutenção, os testes e a evolução do sistema
   - MainWindow.xaml (+ .cs)
   - (XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
 
+## Autenticação (mock “JWT”)
+
+Este projeto inclui um **login simples** para fins de demonstração. Não há emissão de JWT real; é gerado um **token de sessão mock** (GUID) após credenciais válidas.
+
+### Como funciona
+- Serviço: `Services/Auth/MockAuthService.cs` implementa `IAuthService`.
+- Usuários de exemplo:
+  - `admin / 123`
+  - `user / 123`
+- Ao logar com sucesso, o serviço preenche:
+  - `CurrentUser` e `CurrentToken` (ex.: `mock-jwt-<guid>`).
+- O app inicia na tela de **Login** e, após autenticar, abre a `MainWindow`.
+
+### Arquivos relevantes
+- `Services/Auth/IAuthService.cs` – contrato do serviço de autenticação
+- `Services/Auth/MockAuthService.cs` – implementação mock
+- `Views/LoginWindow.xaml` e `LoginWindow.xaml.cs` – UI de login
+- `App.xaml.cs` – fluxo de startup abrindo o Login
+
+### Início da aplicação
+O `App.xaml` **não** usa `StartupUri`. O fluxo é controlado em `App.xaml.cs`:
+
+```csharp
+// App.xaml.cs (trecho)
+protected override void OnStartup(StartupEventArgs e)
+{
+    base.OnStartup(e);
+
+    IAuthService auth = new MockAuthService();
+
+    var login = new LoginWindow(auth);
+    login.Show();
+}
 
 
 
