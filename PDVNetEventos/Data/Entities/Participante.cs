@@ -12,7 +12,7 @@ namespace PDVNetEventos.Data.Entities
     {
         public int Id { get; set; }
         public string NomeCompleto { get; set; } = "";
-        public string CPF { get; set; } = ""; // único
+        public string CPF { get; set; } = ""; 
         public string? Telefone { get; set; }
         public TipoParticipante Tipo { get; set; }
 
