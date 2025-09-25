@@ -31,7 +31,7 @@ Aplicação **WPF + EF Core (SQL Server)** para gestão de **Eventos**, **Partic
   
 **(Opcional) Visual Studio 2022 com workload .NET Desktop**
 
-#Configuração do Banco (connection string)
+# Configuração do Banco (connection string)
 Edite a connection string no AppDbContext (ou no local onde você a definiu). Exemplos:
 
 **LocalDB:**
@@ -179,17 +179,40 @@ Esse desacoplamento facilita a manutenção, os testes e a evolução do sistema
   - MainWindow.xaml (+ .cs)
   - (XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
 
-# Dicas & Troubleshooting
+## Autenticação (mock “JWT”)
 
-  - Namespace XAML do x: deve ser http://schemas.microsoft.com/winfx/2006/xaml.
+Este projeto inclui um **login simples** para fins de demonstração. Não há emissão de JWT real; é gerado um **token de sessão mock** (GUID) após credenciais válidas.
 
-  - DbSet nomes: use EventosParticipantes e EventosFornecedores (plural), conforme AppDbContext.
+### Como funciona
+- Serviço: `Services/Auth/MockAuthService.cs` implementa `IAuthService`.
+- Usuários de exemplo:
+  - `admin / 123`
+  - `user / 123`
+- Ao logar com sucesso, o serviço preenche:
+  - `CurrentUser` e `CurrentToken` (ex.: `mock-jwt-<guid>`).
+- O app inicia na tela de **Login** e, após autenticar, abre a `MainWindow`.
 
-  - Erros CS0111/CS0121: métodos duplicados no EventService. Deixe uma versão por assinatura.
+### Arquivos relevantes
+- `Services/Auth/IAuthService.cs` – contrato do serviço de autenticação
+- `Services/Auth/MockAuthService.cs` – implementação mock
+- `Views/LoginWindow.xaml` e `LoginWindow.xaml.cs` – UI de login
+- `App.xaml.cs` – fluxo de startup abrindo o Login
 
-  - Valores R$: use StringFormat=N2 em colunas/labels.
+### Início da aplicação
+O `App.xaml` **não** usa `StartupUri`. O fluxo é controlado em `App.xaml.cs`:
 
-  - CEP: trate CEP inválido/timeout com mensagem amigável (já previsto em EnderecoFormViewModel.Status).
+```csharp
+// App.xaml.cs (trecho)
+protected override void OnStartup(StartupEventArgs e)
+{
+    base.OnStartup(e);
+
+    IAuthService auth = new MockAuthService();
+
+    var login = new LoginWindow(auth);
+    login.Show();
+}
+
 
 
 
