@@ -235,5 +235,36 @@ namespace PDVNetEventos.Services
 
             await db.SaveChangesAsync();
         }
+        /// <summary>Total gasto com fornecedores no evento.</summary>
+        public async Task<decimal> ObterTotalGastosEventoAsync(int eventoId)
+        {
+            using var db = new AppDbContext();
+
+            var total = await db.EventosFornecedores      
+                .Where(x => x.EventoId == eventoId)
+                .SumAsync(x => (decimal?)x.ValorAcordado) ?? 0m;
+
+            return total;
+        }
+
+        /// <summary>Saldo = orçamento do evento - total gasto.</summary>
+        public async Task<decimal> ObterSaldoOrcamentoEventoAsync(int eventoId)
+        {
+            using var db = new AppDbContext();
+
+            var dados = await db.Eventos
+                .Where(e => e.Id == eventoId)
+                .Select(e => new
+                {
+                    Orcamento = e.OrcamentoMaximo,
+                    Gasto = db.EventosFornecedores        
+                              .Where(v => v.EventoId == e.Id)
+                              .Sum(v => (decimal?)v.ValorAcordado) ?? 0m
+                })
+                .FirstOrDefaultAsync();
+
+            return dados == null ? 0m : dados.Orcamento - dados.Gasto;
+        }
     }
 }
+
