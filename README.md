@@ -213,6 +213,20 @@ protected override void OnStartup(StartupEventArgs e)
     login.Show();
 }
 
+## Testes (xUnit + EF Core InMemory)
+
+Rodar todos os testes:
+```bash
+dotnet test
+Stack:
+
+xUnit
+
+Microsoft.EntityFrameworkCore.InMemory
+
+FluentAssertions
+
+coverlet (coleta de cobertura)
 
 
 
