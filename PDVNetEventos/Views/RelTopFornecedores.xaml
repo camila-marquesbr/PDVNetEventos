@@ -1,0 +1,16 @@
+﻿<Window x:Class="PDVNetEventos.Views.RelTopFornecedores"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fornecedores Mais Utilizados" Height="420" Width="520"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="12">
+        <Button DockPanel.Dock="Top" Content="Recarregar" Width="100" Command="{Binding RecarregarCommand}" Margin="0,0,0,8"/>
+        <DataGrid ItemsSource="{Binding Itens}" AutoGenerateColumns="False" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Serviço" Binding="{Binding Servico}" Width="*"/>
+                <DataGridTextColumn Header="Qtde" Binding="{Binding Quantidade}" Width="80"/>
+                <DataGridTextColumn Header="Total (R$)" Binding="{Binding Total, StringFormat=N2}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

@@ -11,17 +11,16 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using PDVNetEventos.ViewModels;
 
-namespace PDVNetEventos.ViewModels
+namespace PDVNetEventos.Views
 {
-    /// <summary>
-    /// Lógica interna para MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public partial class EditarParticipante : Window
     {
-        public MainWindow()
+        public EditarParticipante(int id)
         {
             InitializeComponent();
+            DataContext = new EditarParticipanteViewModel(id);
         }
     }
 }

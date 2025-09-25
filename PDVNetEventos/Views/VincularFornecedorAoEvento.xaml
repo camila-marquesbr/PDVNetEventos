@@ -1,0 +1,22 @@
+﻿<Window x:Class="PDVNetEventos.Views.VincularFornecedorAoEvento"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Vincular Fornecedor" Height="260" Width="460"
+        WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="16">
+        <TextBlock Text="Fornecedor"/>
+        <ComboBox ItemsSource="{Binding Fornecedores}"
+                  DisplayMemberPath="NomeServico"
+                  SelectedValuePath="Id"
+                  SelectedValue="{Binding FornecedorId}"
+                  Height="28" Margin="0,4,0,10"/>
+
+        <TextBlock Text="Valor acordado (R$)"/>
+        <TextBox Text="{Binding ValorAcordado}" Height="28" Margin="0,4,0,12"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" Width="100" IsCancel="True" Margin="0,0,8,0"/>
+            <Button Content="Adicionar" Width="120" Command="{Binding AdicionarCommand}"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

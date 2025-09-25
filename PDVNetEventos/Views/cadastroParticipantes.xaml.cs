@@ -12,6 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PDVNetEventos.ViewModels;
+using System.Net.Http;
+using PDVNetEventos.Services.Cep;
+
 
 namespace PDVNetEventos.Views
 {
@@ -20,7 +23,8 @@ namespace PDVNetEventos.Views
         public cadastroParticipantes()
         {
             InitializeComponent();
-            DataContext = new cadastroParticipanteViewModel();
+            this.DataContext = new cadastroParticipanteViewModel();
         }
     }
 }
+

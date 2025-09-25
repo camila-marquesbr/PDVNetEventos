@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +9,6 @@ using PDVNetEventos.Commands;
 using PDVNetEventos.Data;
 using PDVNetEventos.Data.Entities;
 using PDVNetEventos.Services;
-using System.Collections.ObjectModel;
 
 namespace PDVNetEventos.ViewModels
 {
@@ -27,9 +23,9 @@ namespace PDVNetEventos.ViewModels
         // para vincular participante a um evento
         public ObservableCollection<Evento> Eventos { get; } = new();
         private int _eventoId;
-        public int EventoId { get => _eventoId; set { _eventoId = value; OnPropertyChanged(nameof(EventoId)); } }
 
         // binds
+        public int EventoId { get => _eventoId; set { _eventoId = value; OnPropertyChanged(nameof(EventoId)); } }
         public string Nome { get => _nome; set { _nome = value; OnPropertyChanged(nameof(Nome)); } }
         public string CPF { get => _cpf; set { _cpf = value; OnPropertyChanged(nameof(CPF)); } }
         public string? Telefone { get => _telefone; set { _telefone = value; OnPropertyChanged(nameof(Telefone)); } }
@@ -60,10 +56,10 @@ namespace PDVNetEventos.ViewModels
             try
             {
                 var svc = new EventService();
-                int id = await svc.CreateParticipantAsync(Nome, CPF, Telefone, Tipo);
+                int id = await svc.CriarParticipanteAsync(Nome, CPF, Telefone, Tipo);
                 System.Windows.MessageBox.Show($"Participante salvo! Id={id}");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Windows.MessageBox.Show("Erro: " + ex.Message);
             }
@@ -78,11 +74,11 @@ namespace PDVNetEventos.ViewModels
                 if (p == null) { System.Windows.MessageBox.Show("Salve um participante primeiro."); return; }
 
                 var svc = new EventService();
-                await svc.AddParticipantToEventAsync(EventoId, p.Id);
+                await svc.AdicionarParticipanteAsync(EventoId, p.Id);
 
                 System.Windows.MessageBox.Show($"Participante '{p.NomeCompleto}' vinculado ao evento.");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Windows.MessageBox.Show("Erro: " + ex.Message);
             }

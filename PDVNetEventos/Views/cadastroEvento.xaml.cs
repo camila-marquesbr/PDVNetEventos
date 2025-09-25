@@ -1,6 +1,9 @@
-﻿using System;
+﻿using PDVNetEventos.Services.Cep;
+using PDVNetEventos.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -11,16 +14,28 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using PDVNetEventos.ViewModels;
+
 
 namespace PDVNetEventos.Views
 {
     public partial class cadastroEvento : Window
     {
-        public cadastroEvento()
+        private readonly ICepService _cepService;
+
+        // Construtor principal: receberá da MainWindow
+        public cadastroEvento(ICepService cepService)
         {
             InitializeComponent();
-            DataContext = new cadastroEventoViewModel();
+            _cepService = cepService ?? throw new ArgumentNullException(nameof(cepService));
+
+        
+            // se você já tinha um ViewModel próprio do Evento, use-o aqui e injete o serviço nele
+            this.DataContext = new cadastroEventoViewModel(_cepService); // NOVO
         }
+
+        // Construtor fallback p/ Designer/preview
+        public cadastroEvento()
+            : this(new ViaCepService(new HttpClient { BaseAddress = new Uri("https://viacep.com.br/") }))
+        { }
     }
 }

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +9,7 @@ using PDVNetEventos.Commands;
 using PDVNetEventos.Data;
 using PDVNetEventos.Data.Entities;
 using PDVNetEventos.Services;
-using System.Collections.ObjectModel;
+using PDVNetEventos.Services.Cep;
 
 namespace PDVNetEventos.ViewModels
 {
@@ -26,6 +23,7 @@ namespace PDVNetEventos.ViewModels
         public ObservableCollection<Evento> Eventos { get; } = new();
         private int _eventoId;
         private decimal _valorAcordado;
+
         public int EventoId { get => _eventoId; set { _eventoId = value; OnPropertyChanged(nameof(EventoId)); } }
         public decimal ValorAcordado { get => _valorAcordado; set { _valorAcordado = value; OnPropertyChanged(nameof(ValorAcordado)); } }
 
@@ -57,10 +55,10 @@ namespace PDVNetEventos.ViewModels
             try
             {
                 var svc = new EventService();
-                int id = await svc.CreateSupplierAsync(NomeServico, CNPJ, PrecoPadrao);
+                int id = await svc.CriarFornecedorAsync(NomeServico, CNPJ, PrecoPadrao);
                 System.Windows.MessageBox.Show($"Fornecedor salvo! Id={id}");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Windows.MessageBox.Show("Erro: " + ex.Message);
             }
@@ -75,11 +73,11 @@ namespace PDVNetEventos.ViewModels
                 if (f == null) { System.Windows.MessageBox.Show("Salve um fornecedor primeiro."); return; }
 
                 var svc = new EventService();
-                await svc.AddSupplierToEventAsync(EventoId, f.Id, ValorAcordado);
+                await svc.AdicionarFornecedorAsync(EventoId, f.Id, ValorAcordado);
 
                 System.Windows.MessageBox.Show($"Fornecedor '{f.NomeServico}' vinculado ao evento.");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Windows.MessageBox.Show("Erro: " + ex.Message);
             }

@@ -10,13 +10,20 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks;
 
+
 namespace PDVNetEventos.Data
 {
     public class AppDbContext : DbContext
     {
-        // Ajuste a conexão conforme sua instalação (use SQLEXPRESS se for o seu caso)
+        // construtor usado nos TESTES (InMemory) e também em DI, se quiser
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        // construtor usado pela aplicação WPF quando você não injeta opções
+        public AppDbContext() { }
+
+        // (opcional) se quiser centralizar a string:
         private const string CONN =
-            "Server=localhost;Database=PDVNetEventosDb;Trusted_Connection=True;TrustServerCertificate=True";
+            "Server=localhost;Database=PDVNetEventosDb;Trusted_Connection=True;TrustServerCertificate=True;";
 
         public DbSet<Evento> Eventos => Set<Evento>();
         public DbSet<TipoEvento> TiposEvento => Set<TipoEvento>();
@@ -27,15 +34,16 @@ namespace PDVNetEventos.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+ 
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer(
-                    "Server=localhost;Database=PDVNetEventosDb;Trusted_Connection=True;TrustServerCertificate=True;");
+                optionsBuilder.UseSqlServer(CONN);
             }
         }
+
         protected override void OnModelCreating(ModelBuilder b)
         {
-            // Tabelas de junção (chaves compostas)
+            // Tabelas de junção (chave composta)
             b.Entity<EventoFornecedor>().HasKey(x => new { x.EventoId, x.FornecedorId });
             b.Entity<EventoParticipante>().HasKey(x => new { x.EventoId, x.ParticipanteId });
 
@@ -51,14 +59,14 @@ namespace PDVNetEventos.Data
             b.Entity<Evento>()
              .ToTable(tb => tb.HasCheckConstraint("CK_Evento_Datas", "[DataInicio] <= [DataFim]"));
 
-            // Seed de tipos de evento
+            // Seed de Tipos de Evento (InMemory só aplica se usar EnsureCreated;
+            // em testes, prefira popular explicitamente quando necessário)
             b.Entity<TipoEvento>().HasData(
                 new TipoEvento { Id = 1, Descricao = "Congresso" },
                 new TipoEvento { Id = 2, Descricao = "Workshop" },
                 new TipoEvento { Id = 3, Descricao = "Interno" }
             );
         }
-
     }
 }
 
