@@ -74,6 +74,21 @@ Na pasta do projeto WPF:
 dotnet build
 dotnet run --project PDVNetEventos
 
+### Início da aplicação
+O `App.xaml` **não** usa `StartupUri`. O fluxo é controlado em `App.xaml.cs`:
+
+```csharp
+// App.xaml.cs (trecho)
+protected override void OnStartup(StartupEventArgs e)
+{
+    base.OnStartup(e);
+
+    IAuthService auth = new MockAuthService();
+
+    var login = new LoginWindow(auth);
+    login.Show();
+}
+
 # Como Usar (fluxo rápido)
 
 1.Tipos de Evento → crie alguns (ex.: Workshop, Palestra).
@@ -197,21 +212,6 @@ Este projeto inclui um **login simples** para fins de demonstração. Não há e
 - `Services/Auth/MockAuthService.cs` – implementação mock
 - `Views/LoginWindow.xaml` e `LoginWindow.xaml.cs` – UI de login
 - `App.xaml.cs` – fluxo de startup abrindo o Login
-
-### Início da aplicação
-O `App.xaml` **não** usa `StartupUri`. O fluxo é controlado em `App.xaml.cs`:
-
-```csharp
-// App.xaml.cs (trecho)
-protected override void OnStartup(StartupEventArgs e)
-{
-    base.OnStartup(e);
-
-    IAuthService auth = new MockAuthService();
-
-    var login = new LoginWindow(auth);
-    login.Show();
-}
 
 ## Testes (xUnit + EF Core InMemory)
 
