@@ -1,102 +1,71 @@
-PDVNetEventos
+## PDVNetEventos
 
-Aplicação WPF + EF Core (SQL Server) para gestão de Eventos, Participantes e Fornecedores, com:
+Aplicação **WPF + EF Core (SQL Server)** para gestão de **Eventos**, **Participantes** e **Fornecedores**, com:
+- **Integração de CEP (ViaCEP)** para buscar e salvar endereço do evento
+- **CRUD separado** de **Tipos de Evento**
+- **Regras de negócio** (orçamento, lotação, conflitos de data)
+- **Relatórios** (agenda do participante, top fornecedores, tipos de participante, saldo dos eventos)
 
-Integração de CEP (ViaCEP) para buscar e salvar endereço do evento
+## Sumário
+- [Requisitos](#requisitos)
+- [Configuração do Banco (connection-string)](#configuração-do-banco-connection-string)
+- [Migrations & Base de Dados](#migrations--base-de-dados)
+- [Como Rodar](#como-rodar)
+- [Como Usar (fluxo-rápido)](#como-usar-fluxo-rápido)
+- [Funcionalidades](#funcionalidades)
+- [Regras de Negócio](#regras-de-negócio)
+- [Relatórios](#relatórios)
+- [Integração de CEP](#integração-de-cep)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Dicas & Troubleshooting](#dicas--troubleshooting)
+- [Licença](#licença)
 
-CRUD separado de Tipos de Evento
+---
 
-Regras de negócio (orçamento, lotação, conflitos de data)
+## Requisitos
+- **.NET SDK** 7.0 ou 8.0  
+- **SQL Server** (LocalDB ou servidor)  
+- **Ferramentas EF Core (CLI):**
+  ```bash
+  dotnet tool install --global dotnet-ef
+  
+**(Opcional) Visual Studio 2022 com workload .NET Desktop**
 
-Relatórios (agenda do participante, top fornecedores, tipos de participante, saldo dos eventos)
-
-Sumário
-
-Requisitos
-
-Configuração do Banco (connection-string)
-
-Migrations & Base de Dados
-
-Como Rodar
-
-Autenticação (mock “JWT”)
-
-Como Usar (fluxo-rápido)
-
-Funcionalidades
-
-Regras de Negócio
-
-Relatórios
-
-Integração de CEP
-
-Estrutura do Projeto
-
-Dicas & Troubleshooting
-
-Testes (xUnit + EF Core InMemory)
-
-Licença
-
-Requisitos
-
-.NET SDK 7.0 ou 8.0
-
-SQL Server (LocalDB ou servidor)
-
-Ferramentas EF Core (CLI):
-
-dotnet tool install --global dotnet-ef
-
-
-(Opcional) Visual Studio 2022 com workload .NET Desktop
-
-Configuração do Banco (connection string)
-
+# Configuração do Banco (connection string)
 Edite a connection string no AppDbContext (ou no local onde você a definiu). Exemplos:
 
-LocalDB:
-
+**LocalDB:**
 Server=(localdb)\MSSQLLocalDB;Database=PDVNetEventosDb;Trusted_Connection=True;TrustServerCertificate=True
 
-
-SQL Server (usuário/senha):
-
+**SQL Server (usuário/senha):**
 Server=localhost;Database=PDVNetEventosDb;User Id=sa;Password=SuaSenhaSegura;TrustServerCertificate=True
-
 
 ⚠️ Não commitar senhas reais. Para avaliação, deixe um exemplo claro no README e/ou use variáveis de ambiente.
 
-Migrations & Base de Dados
+
+# Migrations & Base de Dados
 
 Com a connection string configurada:
 
-(Opcional) Ver as migrations disponíveis:
-
+1. (Opcional) Ver as migrations disponíveis:
 dotnet ef migrations list
 
 
-Criar/atualizar o banco:
-
+2. Criar/atualizar o banco:
 dotnet ef database update
 
 
-(Opcional) Resetar o banco em desenvolvimento:
-
+3. (Opcional) Resetar o banco em desenvolvimento:
 dotnet ef database drop -f
 dotnet ef database update
 
 
-Se você alterou entidades, gere uma migration nova:
-
+*Se você alterou entidades, gere uma migration nova:*
 dotnet ef migrations add NomeDaMigration
 dotnet ef database update
 
-Como Rodar
-
-Via Visual Studio
+# Como Rodar
+**Via Visual Studio**
 Abrir a solução → F5.
 
 Via CLI
@@ -105,191 +74,138 @@ Na pasta do projeto WPF:
 dotnet build
 dotnet run --project PDVNetEventos
 
-Autenticação (mock “JWT”)
+# Como Usar (fluxo rápido)
 
-Este projeto inclui um login simples para fins de demonstração. Não há emissão de JWT real; é gerado um token de sessão mock (GUID) após credenciais válidas.
+1.Tipos de Evento → crie alguns (ex.: Workshop, Palestra).
 
-Como funciona
+2. Eventos → cadastre um evento: informe Observações (obrigatório), CEP (busca ViaCEP) e demais dados.
 
-Serviço: Services/Auth/MockAuthService.cs implementa IAuthService.
+3. Participantes / Fornecedores → cadastre e vincule aos eventos.
 
-Usuários de exemplo:
+  - O sistema bloqueia: orçamento estourado, lotação máxima e conflito de datas.
 
-admin / 123
+4. Relatórios → acesse pela Home:
 
-user / 123
+   - Agenda por participante
 
-Ao logar com sucesso, o serviço preenche:
+   - Top fornecedores (Qtde/Total)
 
-CurrentUser e CurrentToken (ex.: mock-jwt-<guid>).
+   - Tipos de participante
 
-O app inicia na tela de Login e, após autenticar, abre a MainWindow.
+  - Saldo dos eventos (Orçamento − Gasto)
 
-Arquivos relevantes
+## Autenticação (mock “JWT”)
 
-Services/Auth/IAuthService.cs – contrato do serviço de autenticação
+Este projeto inclui um **login simples** para fins de demonstração. Não há emissão de JWT real; é gerado um **token de sessão mock** (GUID) após credenciais válidas.
 
-Services/Auth/MockAuthService.cs – implementação mock
+### Como funciona
+- Serviço: `Services/Auth/MockAuthService.cs` implementa `IAuthService`.
+- Usuários de exemplo:
+  - `admin / 123`
+  - `user / 123`
+- Ao logar com sucesso, o serviço preenche:
+  - `CurrentUser` e `CurrentToken` (ex.: `mock-jwt-<guid>`).
+- O app inicia na tela de **Login** e, após autenticar, abre a `MainWindow`.
+# Funcionalidades
 
-Views/LoginWindow.xaml e LoginWindow.xaml.cs – UI de login
+  - Eventos (com Observações + Endereço via CEP)
 
-App.xaml.cs – fluxo de startup abrindo o Login
+  - Participantes (Nome, CPF, Telefone, Tipo)
 
-Início da aplicação
+  - Fornecedores (Nome do Serviço, CNPJ, valores acordados por evento)
 
-O App.xaml não usa StartupUri. O fluxo é controlado em App.xaml.cs:
+  - Tipos de Evento (CRUD separado e referenciado nos eventos)
 
-// App.xaml.cs (trecho)
-protected override void OnStartup(StartupEventArgs e)
-{
-    base.OnStartup(e);
+  - Relatórios (4 telas dedicadas)
 
-    IAuthService auth = new MockAuthService();
+  - Home organizada por Cadastros e Relatórios
 
-    var login = new LoginWindow(auth);
-    login.Show();
-}
 
-Como Usar (fluxo rápido)
+# Regras de Negócio
 
-Tipos de Evento → crie alguns (ex.: Workshop, Palestra).
+  **Implementadas em Services/EventService.cs:**
 
-Eventos → cadastre um evento: informe Observações (obrigatório), CEP (busca ViaCEP) e demais dados.
+  - Total do evento = soma dos ValorAcordado dos fornecedores
 
-Participantes / Fornecedores → cadastre e vincule aos eventos.
+  - Orçamento: impede vínculo/atualização que ultrapasse OrcamentoMaximo
 
-O sistema bloqueia: orçamento estourado, lotação máxima e conflito de datas.
+  - Conflito de datas: participante não pode estar em eventos com períodos que se sobrepõem
 
-Relatórios → acesse pela Home:
+  - Lotação máxima: impede vínculo quando CapacidadeMaxima é atingida
 
-Agenda por participante
+# Relatórios
 
-Top fornecedores (Qtde/Total)
+ **Implementados via Services/RelatoriosService.cs e VMs/Views dedicados:**
 
-Tipos de participante
+  - Agenda do Participante (filtro por participante)
 
-Saldo dos eventos (Orçamento − Gasto)
+  - Fornecedores Mais Utilizados (Quantidade e Total gasto)
 
-Funcionalidades
+  - Tipos de Participante (distribuição por enum)
 
-Eventos (com Observações + Endereço via CEP)
+  - Saldo dos Eventos (Orçamento, Gasto, Saldo)
 
-Participantes (Nome, CPF, Telefone, Tipo)
+# Integração de CEP
 
-Fornecedores (Nome do Serviço, CNPJ, valores acordados por evento)
+  - Serviço: Services/Cep/ViaCepService.cs
 
-Tipos de Evento (CRUD separado e referenciado nos eventos)
+  - Sub-ViewModel: ViewModels/EnderecoFormViewModel.cs (com comando Buscar CEP)
 
-Relatórios (4 telas dedicadas)
+  - Uso no Evento: cadastroEventoViewModel + cadastroEvento.xaml
 
-Home organizada por Cadastros e Relatórios
+  - Persistência do endereço no Evento (Cep, Logradouro, Complemento, Bairro, Localidade, Uf)
 
-Regras de Negócio
+## Estrutura do Projeto
 
-Implementadas em Services/EventService.cs:
+No projeto, foi aplicado o princípio **SRP (Single Responsibility Principle)**, garantindo que cada classe tivesse uma responsabilidade única.  
 
-Total do evento = soma dos ValorAcordado dos fornecedores
+- `EventService` centraliza regras de negócio de eventos.  
+- `ViaCepService` é responsável apenas pela integração com a API de CEP.  
+- `EnderecoFormViewModel` lida apenas com os campos e comandos de endereço.  
+- `cadastroEventoViewModel` e outros ViewModels cuidam exclusivamente da lógica de tela.  
 
-Orçamento: impede vínculo/atualização que ultrapasse OrcamentoMaximo
+Esse desacoplamento facilita a manutenção, os testes e a evolução do sistema.
 
-Conflito de datas: participante não pode estar em eventos com períodos que se sobrepõem
-
-Lotação máxima: impede vínculo quando CapacidadeMaxima é atingida
-
-Relatórios
-
-Implementados via Services/RelatoriosService.cs e VMs/Views dedicados:
-
-Agenda do Participante (filtro por participante)
-
-Fornecedores Mais Utilizados (Quantidade e Total gasto)
-
-Tipos de Participante (distribuição por enum)
-
-Saldo dos Eventos (Orçamento, Gasto, Saldo)
-
-Integração de CEP
-
-Serviço: Services/Cep/ViaCepService.cs
-
-Sub-ViewModel: ViewModels/EnderecoFormViewModel.cs (com comando Buscar CEP)
-
-Uso no Evento: cadastroEventoViewModel + cadastroEvento.xaml
-
-Persistência do endereço no Evento (Cep, Logradouro, Complemento, Bairro, Localidade, Uf)
-
-Estrutura do Projeto
-
-Foi aplicado o princípio SRP (Single Responsibility Principle), garantindo que cada classe tenha responsabilidade única.
-
-EventService → centraliza regras de negócio de eventos.
-
-ViaCepService → responsável apenas pela integração com a API de CEP.
-
-EnderecoFormViewModel → lida apenas com os campos e comandos de endereço.
-
-cadastroEventoViewModel e outros ViewModels → cuidam da lógica de tela.
-
-Pastas
-
-Data/
-
-Entities/
-
-Evento.cs
-
-Participante.cs
-
-Fornecedor.cs
-
-TipoEvento.cs
-
-(classes de associação)
-
-Migrations/
-
-AppDbContext.cs
-
-Services/
-
-EventService.cs
-
-RelatoriosService.cs
-
-Cep/
-
-ICepService.cs
-
-ViaCepService.cs
-
-ViewModels/
-
-cadastroEventoViewModel.cs
-
-cadastroParticipanteViewModel.cs
-
-cadastroFornecedorViewModel.cs
-
-EnderecoFormViewModel.cs
-
-ListarEventosViewModel.cs
-
-(VMs de relatórios e tipos de evento)
-
-Views/
-
-MainWindow.xaml (+ .cs)
-
-(XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
-
-Testes (xUnit + EF Core InMemory)
+- **Data/**
+  - **Entities/**
+    - Evento.cs
+    - Participante.cs
+    - Fornecedor.cs
+    - TipoEvento.cs
+    - (classes de associação)
+  - **Migrations/**
+  - AppDbContext.cs
+- **Services/**
+  - EventService.cs
+  - RelatoriosService.cs
+  - **Cep/**
+    - ICepService.cs
+    - ViaCepService.cs
+- **ViewModels/**
+  - cadastroEventoViewModel.cs
+  - cadastroParticipanteViewModel.cs
+  - cadastroFornecedorViewModel.cs
+  - EnderecoFormViewModel.cs
+  - ListarEventosViewModel.cs
+  - (VMs de relatórios e tipos de evento)
+- **Views/**
+  - MainWindow.xaml (+ .cs)
+  - (XAMLs de cadastros, listagens, relatórios, CRUD de Tipo de Evento)
+
+
+### Arquivos relevantes
+- `Services/Auth/IAuthService.cs` – contrato do serviço de autenticação
+- `Services/Auth/MockAuthService.cs` – implementação mock
+- `Views/LoginWindow.xaml` e `LoginWindow.xaml.cs` – UI de login
+- `App.xaml.cs` – fluxo de startup abrindo o Login
+
+
+## Testes (xUnit + EF Core InMemory)
 
 Rodar todos os testes:
-
+```bash
 dotnet test
-
-
-Stack de Testes:
+Stack:
 
 xUnit
 
@@ -298,6 +214,5 @@ Microsoft.EntityFrameworkCore.InMemory
 FluentAssertions
 
 coverlet (coleta de cobertura)
-
 
 
